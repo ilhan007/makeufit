@@ -243,7 +243,7 @@ export default function NewWorkoutPage() {
           });
         }
       }
-      router.push(`/workouts/${workout.id}`);
+      router.push("/workouts");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
