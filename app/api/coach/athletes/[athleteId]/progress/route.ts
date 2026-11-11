@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { coachRelationships, workouts, bodyMetrics, workoutSets, workoutExercises, exercises } from "@/db/schema";
 import { and, eq, count } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
 
 async function verifyCoachAccess(coachId: string, athleteId: string) {
   const [rel] = await db

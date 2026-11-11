@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { plans, planSessions, planSessionExercises, planSessionSets } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 const addSessionSchema = z.object({
   dayNumber: z.number().int().min(1),

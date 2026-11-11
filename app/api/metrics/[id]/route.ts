@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { bodyMetrics } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();

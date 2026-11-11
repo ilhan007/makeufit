@@ -4,6 +4,9 @@ import { db } from "@/db";
 import { coachRelationships, bodyMetrics } from "@/db/schema";
 import { and, eq, desc } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
+
 async function verifyCoachAccess(coachId: string, athleteId: string) {
   const [rel] = await db
     .select()

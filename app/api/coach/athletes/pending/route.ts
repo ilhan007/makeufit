@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { coachRelationships, users } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/coach/athletes/pending — coach sees pending requests
 export async function GET() {

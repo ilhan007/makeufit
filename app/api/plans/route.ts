@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { plans, planSessions } from "@/db/schema";
 import { eq, count, or } from "drizzle-orm";
 import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 const createPlanSchema = z.object({
   name: z.string().min(1).max(100),

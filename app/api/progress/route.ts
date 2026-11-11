@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { bodyMetrics, workouts, workoutExercises, workoutSets, exercises } from "@/db/schema";
 import { eq, asc, or } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const session = await auth();

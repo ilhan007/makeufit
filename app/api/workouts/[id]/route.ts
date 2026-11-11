@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { workouts, workoutExercises, workoutSets, exercises } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { updateWorkoutSchema } from "@/lib/validations";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();

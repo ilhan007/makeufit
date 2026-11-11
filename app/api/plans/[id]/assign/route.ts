@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { plans, athletePlans, coachRelationships } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 const schema = z.object({
   athleteId: z.string().min(1),
