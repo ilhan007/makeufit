@@ -36,7 +36,6 @@ export default function PlansPage() {
   const [myPlans, setMyPlans] = useState<Plan[]>([]);
   const [followedPlans, setFollowedPlans] = useState<FollowedPlan[]>([]);
   const [publicPlans, setPublicPlans] = useState<Plan[]>([]);
-  const [userId, setUserId] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function PlansPage() {
       fetch("/api/my-plans").then(r => r.json()),
     ]).then(([session, plans, myPlanRows]) => {
       const uid = session?.user?.id ?? "";
-      setUserId(uid);
       const authored: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.authorId === uid) : [];
       const pub: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.isPublic && p.authorId !== uid) : [];
       const followed: FollowedPlan[] = Array.isArray(myPlanRows) ? myPlanRows : [];

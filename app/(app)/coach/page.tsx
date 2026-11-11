@@ -102,6 +102,7 @@ export default function CoachPage() {
                 initials={accepted.coachName?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() ?? "?"}
                 colorScheme="Accent6"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 {accepted.coachImage && <img src={accepted.coachImage} alt={accepted.coachName ?? "Coach"} />}
               </Avatar>
               <div>
@@ -198,6 +199,7 @@ export default function CoachPage() {
                       colorScheme="Accent6"
                       size="S"
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       {c.image && <img src={c.image} alt={c.name ?? c.email} />}
                     </Avatar>
                     <div style={{ flex: 1, minWidth: 0 }}>

@@ -86,6 +86,7 @@ export default async function AthletesPage() {
                 border: "1px solid var(--sapSelectedColor, #0070f2)",
               }}>
                 <Avatar initials={initials(r.athleteName)} colorScheme="Accent5" size="S">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   {r.athleteImage && <img src={r.athleteImage} alt={r.athleteName ?? "Athlete"} />}
                 </Avatar>
                 <div style={{ flex: 1 }}>
@@ -113,6 +114,7 @@ export default async function AthletesPage() {
                   border: "1px solid var(--sapTileBorderColor)",
                 }}>
                   <Avatar initials={initials(a.athleteName)} colorScheme="Accent3" size="S">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     {a.athleteImage && <img src={a.athleteImage} alt={a.athleteName ?? "Athlete"} />}
                   </Avatar>
                   <div style={{ flex: 1 }}>
