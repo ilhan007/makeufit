@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { plans, planSessions, athletePlans } from "@/db/schema";
+import { plans, planSessions } from "@/db/schema";
 import { eq, count, or } from "drizzle-orm";
 import { z } from "zod";
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { users, coachRelationships } from "@/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 export async function GET() {
   const session = await auth();

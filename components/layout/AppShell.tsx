@@ -48,10 +48,8 @@ export function AppShell({
   const { role } = useRole();
 
   useEffect(() => {
-    fetch("/api/assigned?unseen=true")
-      .then(r => r.json())
-      .then(d => setUnseenCount(d.count ?? 0))
-      .catch(() => {});
+    // placeholder for future notification badge
+    setUnseenCount(0);
   }, [pathname]);
 
   const navItems = allNavItems.filter(item => item.roles.includes(role));
@@ -83,6 +81,7 @@ export function AppShell({
             style={{ cursor: "pointer" }}
             onClick={() => router.push("/metrics")}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             {userImage && <img src={userImage} alt={userName ?? "User"} />}
           </Avatar>
         }

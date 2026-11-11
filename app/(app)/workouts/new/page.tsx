@@ -50,7 +50,6 @@ let tempIdCounter = 0;
 export default function NewWorkoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const templateId = searchParams.get("templateId");
   const cloneId = searchParams.get("cloneId");
 
   const [name, setName] = useState("");
@@ -65,8 +64,8 @@ export default function NewWorkoutPage() {
   const [newExCategory, setNewExCategory] = useState("strength");
   const [newExMuscleGroup, setNewExMuscleGroup] = useState("");
   const [createSaving, setCreateSaving] = useState(false);
-  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [myTemplates, setMyTemplates] = useState<Array<{ id: number; name: string; exerciseCount: number }>>([]);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [myPlans, setMyPlans] = useState<Array<{ id: number; name: string; sessionCount: number }>>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,33 +74,6 @@ export default function NewWorkoutPage() {
       .then((r) => r.json())
       .then(setAllExercises);
   }, []);
-
-  // Pre-populate from template if templateId is present
-  useEffect(() => {
-    if (!templateId) return;
-    fetch(`/api/templates/${templateId}`)
-      .then(r => r.json())
-      .then(template => {
-        if (!template || template.error) return;
-        setName(template.name);
-        if (template.notes) setNotes(template.notes);
-        setExerciseEntries(
-          template.exercises.map((ex: {
-            exerciseId: number; exerciseName: string; category: string; muscleGroup: string | null;
-            sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
-          }) => ({
-            exercise: { id: ex.exerciseId, name: ex.exerciseName, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
-            sets: ex.sets.map(s => ({
-              tempId: ++tempIdCounter,
-              setNumber: s.setNumber,
-              reps: s.reps != null ? String(s.reps) : "",
-              weightKg: s.weightKg != null ? String(s.weightKg) : "",
-              durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
-            })),
-          }))
-        );
-      });
-  }, [templateId]);
 
   // Pre-populate from a cloned past workout
   useEffect(() => {
@@ -138,37 +110,37 @@ export default function NewWorkoutPage() {
     return (e: Ui5CustomEvent<InputDomRef>) => setter(e.target.value ?? "");
   }
 
-  function applyTemplate(template: {
-    name: string; notes?: string | null;
-    exercises: Array<{
-      exerciseId: number; exerciseName: string; category: string; muscleGroup: string | null;
-      sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
-    }>;
-  }) {
-    setName(template.name);
-    if (template.notes) setNotes(template.notes);
-    setExerciseEntries(
-      template.exercises.map(ex => ({
-        exercise: { id: ex.exerciseId, name: ex.exerciseName, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
-        sets: ex.sets.map(s => ({
-          tempId: ++tempIdCounter,
-          setNumber: s.setNumber,
-          reps: s.reps != null ? String(s.reps) : "",
-          weightKg: s.weightKg != null ? String(s.weightKg) : "",
-          durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
-        })),
-      }))
-    );
-    setTemplateDialogOpen(false);
+  function openPlanDialog() {
+    fetch("/api/plans").then(r => r.json()).then(setMyPlans);
+    setPlanDialogOpen(true);
   }
 
-  function openTemplateDialog() {
-    fetch("/api/templates").then(r => r.json()).then(setMyTemplates);
-    setTemplateDialogOpen(true);
-  }
-
-  function pickTemplate(templateId: number) {
-    fetch(`/api/templates/${templateId}`).then(r => r.json()).then(applyTemplate);
+  function pickPlan(planId: number) {
+    fetch(`/api/plans/${planId}`).then(r => r.json()).then(plan => {
+      if (!plan || plan.error) return;
+      setName(plan.name);
+      if (plan.description) setNotes(plan.description);
+      // Use first session's exercises if available
+      if (plan.sessions?.length > 0) {
+        const firstSession = plan.sessions[0];
+        setExerciseEntries(
+          firstSession.exercises.map((ex: {
+            exerciseId: number; name: string; category: string; muscleGroup: string | null;
+            sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
+          }) => ({
+            exercise: { id: ex.exerciseId, name: ex.name, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
+            sets: ex.sets.map(s => ({
+              tempId: ++tempIdCounter,
+              setNumber: s.setNumber,
+              reps: s.reps != null ? String(s.reps) : "",
+              weightKg: s.weightKg != null ? String(s.weightKg) : "",
+              durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
+            })),
+          }))
+        );
+      }
+      setPlanDialogOpen(false);
+    });
   }
 
   async function createAndAdd() {
@@ -336,7 +308,7 @@ export default function NewWorkoutPage() {
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginTop: "1rem" }}>
         <FlexBox style={{ gap: "0.5rem" }}>
           <Button onClick={() => setDialogOpen(true)}>Add Exercise</Button>
-          <Button design="Default" onClick={openTemplateDialog}>From Plan</Button>
+          <Button design="Default" onClick={openPlanDialog}>From Plan</Button>
         </FlexBox>
         <FlexBox style={{ gap: "0.5rem" }}>
           {error && <Text style={{ color: "var(--sapNegativeTextColor)", alignSelf: "center" }}>{error}</Text>}
@@ -432,30 +404,30 @@ export default function NewWorkoutPage() {
       </Dialog>
 
       <Dialog
-        open={templateDialogOpen}
+        open={planDialogOpen}
         headerText="Start from Plan"
-        onClose={() => setTemplateDialogOpen(false)}
+        onClose={() => setPlanDialogOpen(false)}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
-            <Button design="Transparent" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
+            <Button design="Transparent" onClick={() => setPlanDialogOpen(false)}>Cancel</Button>
           </div>
         }
       >
         <div style={{ padding: "0.75rem 1rem 0" }}>
-          {myTemplates.length === 0 ? (
+          {myPlans.length === 0 ? (
             <Text style={{ color: "var(--sapNeutralTextColor)" }}>
               No plans yet. Create one in the Plans section.
             </Text>
           ) : (
             <List style={{ maxHeight: 360, overflowY: "auto" }}>
-              {myTemplates.map(t => (
+              {myPlans.map(p => (
                 <ListItemStandard
-                  key={t.id}
-                  description={`${t.exerciseCount} exercise${t.exerciseCount !== 1 ? "s" : ""}`}
-                  onClick={() => pickTemplate(t.id)}
+                  key={p.id}
+                  description={`${p.sessionCount} session${p.sessionCount !== 1 ? "s" : ""}`}
+                  onClick={() => pickPlan(p.id)}
                 >
-                  {t.name}
+                  {p.name}
                 </ListItemStandard>
               ))}
             </List>

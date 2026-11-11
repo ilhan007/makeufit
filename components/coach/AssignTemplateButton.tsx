@@ -3,38 +3,39 @@
 import { useState, useEffect } from "react";
 import { Button, Dialog, List, ListItemStandard, Text } from "@ui5/webcomponents-react";
 
-type Template = {
+type Plan = {
   id: number;
   name: string;
-  notes: string | null;
-  exerciseCount: number;
+  description: string | null;
+  weeksCount: number;
+  sessionCount: number;
 };
 
 export function AssignTemplateButton({ athleteId }: { athleteId: string; coachId: string }) {
   const [open, setOpen] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [assigning, setAssigning] = useState<number | null>(null);
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (open) fetch("/api/templates").then(r => r.json()).then(setTemplates);
+    if (open) fetch("/api/plans").then(r => r.json()).then(setPlans);
   }, [open]);
 
-  async function assign(templateId: number) {
-    setAssigning(templateId);
-    await fetch(`/api/templates/${templateId}/assign`, {
+  async function assign(planId: number) {
+    setAssigning(planId);
+    await fetch(`/api/plans/${planId}/assign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ athleteId }),
     });
     setAssigning(null);
-    setSuccess("Workout assigned!");
+    setSuccess("Plan assigned!");
     setTimeout(() => { setSuccess(""); setOpen(false); }, 1500);
   }
 
   return (
     <>
-      <Button design="Emphasized" onClick={() => setOpen(true)}>Assign Workout</Button>
+      <Button design="Emphasized" onClick={() => setOpen(true)}>Assign Plan</Button>
       <Dialog
         open={open}
         headerText="Assign Plan"
@@ -48,20 +49,20 @@ export function AssignTemplateButton({ athleteId }: { athleteId: string; coachId
         }
       >
         <div style={{ padding: "0.75rem 1rem 0" }}>
-          {templates.length === 0 ? (
+          {plans.length === 0 ? (
             <Text style={{ color: "var(--sapNeutralTextColor)" }}>
               No plans yet. Create one in the Plans section.
             </Text>
           ) : (
             <List>
-              {templates.map(t => (
+              {plans.map(p => (
                 <ListItemStandard
-                  key={t.id}
-                  description={`${t.exerciseCount} exercise${t.exerciseCount !== 1 ? "s" : ""}${t.notes ? ` · ${t.notes}` : ""}`}
-                  additionalText={assigning === t.id ? "Assigning..." : ""}
-                  onClick={() => assign(t.id)}
+                  key={p.id}
+                  description={`${p.sessionCount} session${p.sessionCount !== 1 ? "s" : ""} · ${p.weeksCount} week${p.weeksCount !== 1 ? "s" : ""}${p.description ? ` · ${p.description}` : ""}`}
+                  additionalText={assigning === p.id ? "Assigning..." : ""}
+                  onClick={() => assign(p.id)}
                 >
-                  {t.name}
+                  {p.name}
                 </ListItemStandard>
               ))}
             </List>

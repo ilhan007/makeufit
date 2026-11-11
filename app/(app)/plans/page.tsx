@@ -10,7 +10,6 @@ import {
   List,
   ListItemCustom,
   Tag,
-  Text,
   Title,
 } from "@ui5/webcomponents-react";
 import { DeleteButton } from "@/components/DeleteButton";

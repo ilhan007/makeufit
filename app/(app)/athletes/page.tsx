@@ -67,7 +67,7 @@ export default async function AthletesPage() {
     <div>
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
         <Title level="H2">Athletes</Title>
-        <Link href="/templates">
+        <Link href="/plans">
           <Button design="Default">Manage Plans</Button>
         </Link>
       </FlexBox>
