@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRole } from "@/components/layout/RoleContext";
 import type { Ui5CustomEvent } from "@ui5/webcomponents-react";
 import type { InputDomRef, DatePickerDomRef } from "@ui5/webcomponents-react";
 import type { DatePickerChangeEventDetail } from "@ui5/webcomponents/dist/DatePicker.js";
@@ -48,19 +46,11 @@ type Metric = {
   waistCm: number | null;
 };
 
-type Role = "athlete" | "coach" | "both";
-
 type ProgressData = {
   weightData: Array<{ date: string; weight: number }>;
   exerciseList: Array<{ id: number; name: string }>;
   prData: Record<number, Array<{ date: string; maxWeight: number }>>;
 };
-
-const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "athlete", label: "Athlete", description: "Track your own workouts & metrics" },
-  { value: "coach", label: "Coach", description: "Manage athletes & assign workouts" },
-  { value: "both", label: "Both", description: "Train yourself and coach others" },
-];
 
 const CHIP_COLORS = [
   "var(--sapChart_OrderedColor_2, #E8743B)",
@@ -72,11 +62,6 @@ const CHIP_COLORS = [
 ];
 
 export default function MetricsPage() {
-  const { data: session } = useSession();
-  const userName = session?.user?.name;
-  const { role, setRole: setContextRole } = useRole();
-
-  // Metrics state
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [weightKg, setWeightKg] = useState("");
@@ -84,16 +69,6 @@ export default function MetricsPage() {
   const [waistCm, setWaistCm] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  // Role state
-  const [roleSaving, setRoleSaving] = useState(false);
-
-  // Bio state
-  const [bio, setBio] = useState("");
-  const [bioSaving, setBioSaving] = useState(false);
-  const [bioSaved, setBioSaved] = useState(false);
-
-  // Progress state
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
   const [trackedIds, setTrackedIds] = useState<number[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -101,9 +76,8 @@ export default function MetricsPage() {
   const [exSearch, setExSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/metrics").then((r) => r.json()).then(setMetrics);
-    fetch("/api/user/bio").then((r) => r.json()).then((d) => { if (d.bio != null) setBio(d.bio); });
-    fetch("/api/progress").then((r) => r.json()).then((data: ProgressData) => {
+    fetch("/api/metrics").then(r => r.json()).then(setMetrics);
+    fetch("/api/progress").then(r => r.json()).then((data: ProgressData) => {
       setProgressData(data);
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -117,30 +91,6 @@ export default function MetricsPage() {
     });
   }, []);
 
-  async function selectRole(newRole: Role) {
-    if (newRole === role) return;
-    setRoleSaving(true);
-    await fetch("/api/user/role", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: newRole }),
-    });
-    setContextRole(newRole);
-    setRoleSaving(false);
-  }
-
-  async function saveBio() {
-    setBioSaving(true);
-    await fetch("/api/user/bio", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bio }),
-    });
-    setBioSaving(false);
-    setBioSaved(true);
-    setTimeout(() => setBioSaved(false), 2000);
-  }
-
   function handleInput(setter: (v: string) => void) {
     return (e: Ui5CustomEvent<InputDomRef>) => setter(e.target.value ?? "");
   }
@@ -153,7 +103,6 @@ export default function MetricsPage() {
       if (weightKg) body.weightKg = parseFloat(weightKg);
       if (bodyFatPct) body.bodyFatPct = parseFloat(bodyFatPct);
       if (waistCm) body.waistCm = parseFloat(waistCm);
-
       const res = await fetch("/api/metrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -161,7 +110,7 @@ export default function MetricsPage() {
       });
       if (!res.ok) throw new Error("Failed");
       const newMetric = await res.json();
-      setMetrics((prev) => [newMetric, ...prev]);
+      setMetrics(prev => [newMetric, ...prev]);
       setWeightKg(""); setBodyFatPct(""); setWaistCm("");
     } catch {
       setError("Something went wrong.");
@@ -172,18 +121,15 @@ export default function MetricsPage() {
 
   async function deleteMetric(id: number) {
     await fetch(`/api/metrics/${id}`, { method: "DELETE" });
-    setMetrics((prev) => prev.filter((m) => m.id !== id));
+    setMetrics(prev => prev.filter(m => m.id !== id));
   }
 
   function toggleExercise(id: number) {
     setTrackedIds(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      if (next.length > 0 && (activeId === null || !next.includes(activeId))) {
-        setActiveId(next[0]);
-      } else if (next.length === 0) {
-        setActiveId(null);
-      }
+      if (next.length > 0 && (activeId === null || !next.includes(activeId))) setActiveId(next[0]);
+      else if (next.length === 0) setActiveId(null);
       return next;
     });
   }
@@ -197,77 +143,7 @@ export default function MetricsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <Title level="H2">Profile</Title>
-        {userName && <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "1rem" }}>{userName}</Text>}
-      </div>
-
-      {/* Profile Type */}
-      <Card header={<CardHeader titleText="Profile Type" subtitleText="How do you use MakeUFit?" />} style={{ marginBottom: "2rem" }}>
-        <div style={{ padding: "1rem" }}>
-          <Label style={{ display: "block", marginBottom: "0.75rem" }}>I am a...</Label>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            {ROLES.map(({ value, label, description }) => {
-              const isActive = role === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => selectRole(value)}
-                  disabled={roleSaving}
-                  style={{
-                    padding: "0.75rem 1.25rem",
-                    borderRadius: 10,
-                    border: `2px solid ${isActive ? "var(--sapSelectedColor, #0070f2)" : "var(--sapTileBorderColor)"}`,
-                    background: isActive ? "var(--sapSelectedColor, #0070f2)" : "var(--sapTileBackground)",
-                    color: isActive ? "#fff" : "var(--sapTextColor)",
-                    cursor: roleSaving ? "not-allowed" : "pointer",
-                    textAlign: "left",
-                    minWidth: 140,
-                    transition: "background 0.15s, border-color 0.15s, color 0.15s",
-                    fontFamily: "inherit",
-                    opacity: roleSaving ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{description}</div>
-                </button>
-              );
-            })}
-          </div>
-          {(role === "coach" || role === "both") && (
-            <div style={{ marginTop: "1.25rem" }}>
-              <Label style={{ display: "block", marginBottom: "0.5rem" }}>Coach Bio</Label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                maxLength={500}
-                placeholder="Tell athletes a bit about yourself, your coaching style, specialities..."
-                rows={3}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "0.6rem 0.75rem",
-                  borderRadius: 6,
-                  border: "1px solid var(--sapField_BorderColor)",
-                  background: "var(--sapField_Background)",
-                  color: "var(--sapField_TextColor)",
-                  fontFamily: "inherit",
-                  fontSize: "0.875rem",
-                  resize: "vertical",
-                }}
-              />
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
-                <Button onClick={saveBio} disabled={bioSaving}>{bioSaving ? "Saving..." : "Save Bio"}</Button>
-                {bioSaved && <Text style={{ color: "var(--sapPositiveTextColor)", fontSize: "0.875rem" }}>Saved!</Text>}
-                <Text style={{ marginLeft: "auto", fontSize: "0.75rem", color: "var(--sapNeutralTextColor)" }}>{bio.length}/500</Text>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Personal Metrics */}
-      <Title level="H3" style={{ marginBottom: "1rem" }}>Personal Metrics</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>Metrics</Title>
 
       <Card header={<CardHeader titleText="Log Entry" />} style={{ marginBottom: "1.5rem" }}>
         <FlexBox direction={FlexBoxDirection.Column} style={{ gap: "0.75rem", padding: "1rem" }}>
@@ -302,7 +178,7 @@ export default function MetricsPage() {
             </TableHeaderRow>
           }
         >
-          {metrics.map((m) => (
+          {metrics.map(m => (
             <TableRow key={m.id}>
               <TableCell>{new Date(m.date).toLocaleDateString()}</TableCell>
               <TableCell>{m.weightKg ? `${m.weightKg} kg` : "—"}</TableCell>
@@ -316,12 +192,11 @@ export default function MetricsPage() {
         </Table>
       </Card>
 
-      {/* Progress */}
       <Title level="H3" style={{ marginBottom: "1rem" }}>Progress</Title>
 
       <Card header={<CardHeader titleText="Body Weight Over Time" />} style={{ marginBottom: "1.5rem" }}>
         {!progressData || progressData.weightData.length === 0 ? (
-          <div style={{ padding: "1rem" }}><Text>No weight data yet. Log your first body metric above!</Text></div>
+          <div style={{ padding: "1rem" }}><Text>No weight data yet. Log your first entry above!</Text></div>
         ) : (
           <div style={{ padding: "1rem" }}>
             <ResponsiveContainer width="100%" height={300}>
@@ -349,9 +224,7 @@ export default function MetricsPage() {
       }>
         <FlexBox direction={FlexBoxDirection.Column} style={{ padding: "1rem", gap: "1rem" }}>
           {trackedIds.length === 0 ? (
-            <Text style={{ color: "var(--sapNeutralTextColor)" }}>
-              Select exercises to track their progress over time.
-            </Text>
+            <Text style={{ color: "var(--sapNeutralTextColor)" }}>Select exercises to track their progress over time.</Text>
           ) : (
             <>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -361,22 +234,14 @@ export default function MetricsPage() {
                   const color = CHIP_COLORS[idx % CHIP_COLORS.length];
                   const isActive = id === activeId;
                   return (
-                    <button
-                      key={id}
-                      onClick={() => setActiveId(id)}
-                      style={{
-                        padding: "0.375rem 1rem",
-                        borderRadius: 999,
-                        border: `2px solid ${color}`,
-                        background: isActive ? color : "transparent",
-                        color: isActive ? "#fff" : color,
-                        fontWeight: 600,
-                        fontSize: "0.875rem",
-                        cursor: "pointer",
-                        transition: "background 0.15s, color 0.15s",
-                        fontFamily: "inherit",
-                      }}
-                    >
+                    <button key={id} onClick={() => setActiveId(id)} style={{
+                      padding: "0.375rem 1rem", borderRadius: 999,
+                      border: `2px solid ${color}`,
+                      background: isActive ? color : "transparent",
+                      color: isActive ? "#fff" : color,
+                      fontWeight: 600, fontSize: "0.875rem", cursor: "pointer",
+                      transition: "background 0.15s, color 0.15s", fontFamily: "inherit",
+                    }}>
                       {ex.name}
                     </button>
                   );
@@ -400,7 +265,6 @@ export default function MetricsPage() {
         </FlexBox>
       </Card>
 
-      {/* Exercise picker dialog */}
       <Dialog
         open={exDialogOpen}
         headerText="Track Exercises"

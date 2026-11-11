@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [Google],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
