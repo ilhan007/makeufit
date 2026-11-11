@@ -58,14 +58,16 @@ export function AppShell({
 
   useEffect(() => {
     if (!menuOpen) return;
+    let active = false;
+    const t = setTimeout(() => { active = true; }, 0);
     function handleClick(e: MouseEvent) {
+      if (!active) return;
       const target = e.target as Node;
       if (menuRef.current && menuRef.current.contains(target)) return;
-      // Small delay so button onClick fires before we unmount the menu
-      setTimeout(() => setMenuOpen(false), 150);
+      setMenuOpen(false);
     }
-    document.addEventListener("pointerdown", handleClick);
-    return () => document.removeEventListener("pointerdown", handleClick);
+    document.addEventListener("click", handleClick);
+    return () => { clearTimeout(t); document.removeEventListener("click", handleClick); };
   }, [menuOpen]);
 
   if (!mounted) return null;
