@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { users, coachRelationships } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq, or, and, ne } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,10 @@ export async function GET() {
   const coaches = await db
     .select({ id: users.id, name: users.name, email: users.email, image: users.image, role: users.role, bio: users.bio })
     .from(users)
-    .where(or(eq(users.role, "coach"), eq(users.role, "both")));
+    .where(and(
+      or(eq(users.role, "coach"), eq(users.role, "both")),
+      ne(users.id, session.user.id)
+    ));
 
   const existing = await db
     .select({ coachId: coachRelationships.coachId })
