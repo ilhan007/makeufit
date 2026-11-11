@@ -9,16 +9,23 @@ import {
   CardHeader,
   FlexBox,
   FlexBoxJustifyContent,
+  Input,
   Tag,
   Text,
   Title,
 } from "@ui5/webcomponents-react";
+import type { Ui5CustomEvent } from "@ui5/webcomponents-react";
+import type { InputDomRef } from "@ui5/webcomponents-react";
 
 type SetData = {
   setNumber: number;
   reps: number | null;
   weightKg: number | null;
   durationSeconds: number | null;
+  // editable overrides (string for input binding)
+  editReps: string;
+  editWeight: string;
+  editDuration: string;
 };
 
 type ExerciseData = {
@@ -47,41 +54,110 @@ type Plan = {
   sessions: Session[];
 };
 
-function formatSet(set: SetData): string {
-  const parts: string[] = [];
-  if (set.reps) parts.push(`${set.reps} reps`);
-  if (set.weightKg) parts.push(`${set.weightKg} kg`);
-  if (set.durationSeconds) parts.push(`${set.durationSeconds}s`);
-  return parts.join(" · ") || "—";
-}
-
 export default function PlanDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [userId, setUserId] = useState<string>("");
-  const [enrolling, setEnrolling] = useState(false);
-  const [enrolled, setEnrolled] = useState(false);
+  const [using, setUsing] = useState(false);
+  const [used, setUsed] = useState(false);
+  const [completing, setCompleting] = useState<number | null>(null); // sessionId being completed
 
   useEffect(() => {
-    fetch(`/api/plans/${params.id}`).then(r => r.json()).then(setPlan);
+    fetch(`/api/plans/${params.id}`)
+      .then(r => r.json())
+      .then((data: Omit<Plan, "sessions"> & { sessions: Array<Omit<Session, "exercises"> & { exercises: Array<Omit<ExerciseData, "sets"> & { sets: Array<Omit<SetData, "editReps" | "editWeight" | "editDuration">> }> }> }) => {
+        const hydrated: Plan = {
+          ...data,
+          sessions: data.sessions.map(s => ({
+            ...s,
+            exercises: s.exercises.map(ex => ({
+              ...ex,
+              sets: ex.sets.map(set => ({
+                ...set,
+                editReps: set.reps != null ? String(set.reps) : "",
+                editWeight: set.weightKg != null ? String(set.weightKg) : "",
+                editDuration: set.durationSeconds != null ? String(set.durationSeconds) : "",
+              })),
+            })),
+          })),
+        };
+        setPlan(hydrated);
+      });
     fetch("/api/auth/session").then(r => r.json()).then(d => { if (d?.user?.id) setUserId(d.user.id); });
   }, [params.id]);
 
-  async function enroll() {
-    setEnrolling(true);
+  function updateSet(sessionId: number, exerciseId: number, setNumber: number, field: "editReps" | "editWeight" | "editDuration", value: string) {
+    setPlan(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sessions: prev.sessions.map(s => s.id !== sessionId ? s : {
+          ...s,
+          exercises: s.exercises.map(ex => ex.exerciseId !== exerciseId ? ex : {
+            ...ex,
+            sets: ex.sets.map(set => set.setNumber !== setNumber ? set : { ...set, [field]: value }),
+          }),
+        }),
+      };
+    });
+  }
+
+  async function useThisPlan() {
+    setUsing(true);
     await fetch("/api/my-plans", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId: plan!.id }),
     });
-    setEnrolling(false);
-    setEnrolled(true);
+    setUsing(false);
+    setUsed(true);
+  }
+
+  async function completeWorkout(session: Session) {
+    setCompleting(session.id);
+    try {
+      const wRes = await fetch("/api/workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: session.name,
+          date: new Date().toISOString(),
+          notes: `From plan: ${plan!.name}`,
+        }),
+      });
+      if (!wRes.ok) throw new Error("Failed");
+      const workout = await wRes.json();
+
+      for (const ex of session.exercises) {
+        for (const set of ex.sets) {
+          const reps = set.editReps ? parseInt(set.editReps) : undefined;
+          const weightKg = set.editWeight ? parseFloat(set.editWeight) : undefined;
+          const durationSeconds = set.editDuration ? parseInt(set.editDuration) : undefined;
+          if (!reps && !durationSeconds) continue;
+          await fetch(`/api/workouts/${workout.id}/sets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              exerciseId: ex.exerciseId,
+              setNumber: set.setNumber,
+              reps,
+              weightKg,
+              durationSeconds,
+            }),
+          });
+        }
+      }
+      router.push("/workouts");
+    } catch {
+      setCompleting(null);
+    }
   }
 
   if (!plan) return <div style={{ padding: "2rem" }}>Loading...</div>;
 
   const isOwner = plan.authorId === userId;
+  const isPublicNotOwner = !isOwner && plan.isPublic;
 
   return (
     <div>
@@ -105,9 +181,9 @@ export default function PlanDetailPage() {
               <Button>Edit</Button>
             </Link>
           )}
-          {!isOwner && plan.isPublic && (
-            <Button design="Emphasized" onClick={enroll} disabled={enrolling || enrolled}>
-              {enrolled ? "Enrolled!" : enrolling ? "Enrolling..." : "Follow This Plan"}
+          {isPublicNotOwner && (
+            <Button design="Emphasized" onClick={useThisPlan} disabled={using || used}>
+              {used ? "Added to My Plans!" : using ? "Adding..." : "Use This Plan"}
             </Button>
           )}
         </FlexBox>
@@ -137,6 +213,17 @@ export default function PlanDetailPage() {
                   <CardHeader
                     titleText={session.name}
                     subtitleText={`Day ${session.dayNumber}${session.notes ? ` · ${session.notes}` : ""}`}
+                    action={
+                      isOwner && (
+                        <Button
+                          design="Emphasized"
+                          onClick={() => completeWorkout(session)}
+                          disabled={completing === session.id}
+                        >
+                          {completing === session.id ? "Saving..." : "Complete Workout"}
+                        </Button>
+                      )
+                    }
                   />
                 }
                 style={{ marginBottom: "1rem" }}
@@ -146,28 +233,53 @@ export default function PlanDetailPage() {
                     <Text style={{ color: "var(--sapNeutralTextColor)" }}>No exercises in this session.</Text>
                   ) : (
                     session.exercises.map((ex, exIdx) => (
-                      <div key={ex.exerciseId + "-" + exIdx} style={{ marginBottom: "0.75rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" }}>
+                      <div key={ex.exerciseId + "-" + exIdx} style={{ marginBottom: "1rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
                           <Text style={{ fontWeight: 600 }}>{ex.name}</Text>
                           <Tag design="Set2" colorScheme="5" style={{ fontSize: "0.7rem" }}>
                             {ex.muscleGroup ? ex.muscleGroup.replace(/_/g, " ") : ex.category}
                           </Tag>
                         </div>
-                        {ex.sets.length > 0 ? (
+                        {ex.sets.length > 0 && (
                           <div style={{ paddingLeft: "0.75rem" }}>
+                            {/* Header */}
+                            <div style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.35rem" }}>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Set</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Reps</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Weight (kg)</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Duration (s)</span>
+                            </div>
                             {ex.sets.map(set => (
-                              <div key={set.setNumber} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
-                                <Text style={{ color: "var(--sapNeutralTextColor)", minWidth: "3rem", fontSize: "0.875rem" }}>
-                                  Set {set.setNumber}
-                                </Text>
-                                <Text style={{ fontSize: "0.875rem" }}>{formatSet(set)}</Text>
+                              <div key={set.setNumber} style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.35rem", alignItems: "center" }}>
+                                <Text style={{ fontSize: "0.875rem", color: "var(--sapNeutralTextColor)" }}>{set.setNumber}</Text>
+                                {isOwner ? (
+                                  <>
+                                    <Input
+                                      value={set.editReps}
+                                      placeholder={set.reps != null ? String(set.reps) : "—"}
+                                      onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.id, ex.exerciseId, set.setNumber, "editReps", e.target.value ?? "")}
+                                    />
+                                    <Input
+                                      value={set.editWeight}
+                                      placeholder={set.weightKg != null ? String(set.weightKg) : "—"}
+                                      onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.id, ex.exerciseId, set.setNumber, "editWeight", e.target.value ?? "")}
+                                    />
+                                    <Input
+                                      value={set.editDuration}
+                                      placeholder={set.durationSeconds != null ? String(set.durationSeconds) : "—"}
+                                      onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.id, ex.exerciseId, set.setNumber, "editDuration", e.target.value ?? "")}
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <Text style={{ fontSize: "0.875rem" }}>{set.reps ?? "—"}</Text>
+                                    <Text style={{ fontSize: "0.875rem" }}>{set.weightKg != null ? `${set.weightKg} kg` : "—"}</Text>
+                                    <Text style={{ fontSize: "0.875rem" }}>{set.durationSeconds != null ? `${set.durationSeconds}s` : "—"}</Text>
+                                  </>
+                                )}
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <Text style={{ paddingLeft: "0.75rem", color: "var(--sapNeutralTextColor)", fontSize: "0.875rem" }}>
-                            No target sets defined
-                          </Text>
                         )}
                       </div>
                     ))
