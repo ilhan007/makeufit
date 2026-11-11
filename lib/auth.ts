@@ -10,13 +10,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
-      const existing = await getDb()
-        .select()
-        .from(users)
-        .where(eq(users.email, user.email))
-        .limit(1);
+      const db = getDb();
+      const existing = await db.select().from(users).where(eq(users.email, user.email)).limit(1);
       if (existing.length === 0) {
-        await getDb().insert(users).values({
+        await db.insert(users).values({
           id: user.id ?? crypto.randomUUID(),
           name: user.name,
           email: user.email,
@@ -26,7 +23,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user?.email) {
+        const db = getDb();
+        const [dbUser] = await db.select().from(users).where(eq(users.email, user.email)).limit(1);
+        if (dbUser) token.id = dbUser.id;
+      }
       return token;
     },
     async session({ session, token }) {
