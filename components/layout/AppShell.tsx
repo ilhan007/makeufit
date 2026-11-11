@@ -15,6 +15,7 @@ import "@ui5/webcomponents-icons/dist/employee.js";
 import "@ui5/webcomponents-icons/dist/manager.js";
 import "@ui5/webcomponents-icons/dist/group.js";
 import "@ui5/webcomponents-icons/dist/document-text.js";
+import "@ui5/webcomponents-icons/dist/menu2.js";
 import {
   Avatar,
   Icon,
@@ -33,6 +34,8 @@ const allNavItems = [
   { text: "Athletes", icon: "group", href: "/athletes", roles: ["coach", "both"] },
 ];
 
+const MOBILE_BREAKPOINT = 768;
+
 export function AppShell({
   children,
   userName,
@@ -48,12 +51,24 @@ export function AppShell({
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { role } = useRole();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   useEffect(() => { setUnseenCount(0); }, [pathname]);
   useEffect(() => { setMenuOpen(false); }, [pathname]);
+  // Close nav on mobile when navigating
+  useEffect(() => { if (isMobile) setNavOpen(false); }, [pathname, isMobile]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -83,6 +98,11 @@ export function AppShell({
     setMenuOpen(o => !o);
   }
 
+  function navigate(href: string) {
+    router.push(href);
+    if (isMobile) setNavOpen(false);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <ShellBar
@@ -95,6 +115,15 @@ export function AppShell({
             style={{ width: 32, height: 32, color: "#fff", cursor: "pointer" }}
             onClick={() => router.push("/dashboard")}
           />
+        }
+        startButton={
+          isMobile ? (
+            <Icon
+              name="menu2"
+              style={{ width: 24, height: 24, color: "#fff", cursor: "pointer" }}
+              onClick={() => setNavOpen(o => !o)}
+            />
+          ) : undefined
         }
         profile={
           <Avatar
@@ -147,30 +176,56 @@ export function AppShell({
         document.body
       )}
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <SideNavigation
-          style={{ width: 240, height: "100%", flexShrink: 0 }}
-          onSelectionChange={(e) => {
-            const item = e.detail.item;
-            const href = navItems.find((n) => n.text === item.text)?.href;
-            if (href) router.push(href);
-          }}
-        >
-          {navItems.map((item) => (
-            <SideNavigationItem
-              key={item.href}
-              text={item.text}
-              icon={item.icon}
-              selected={pathname === item.href || pathname.startsWith(item.href + "/")}
-              {...(item.href === "/coach" && unseenCount > 0 ? { counter: String(unseenCount) } : {})}
-            />
-          ))}
-        </SideNavigation>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+        {/* Mobile overlay */}
+        {isMobile && navOpen && (
+          <div
+            onClick={() => setNavOpen(false)}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+              zIndex: 100,
+            }}
+          />
+        )}
+
+        <div style={{
+          width: 240,
+          height: "100%",
+          flexShrink: 0,
+          // On mobile: slide in/out as a drawer
+          ...(isMobile ? {
+            position: "fixed",
+            top: 0,
+            left: navOpen ? 0 : -260,
+            bottom: 0,
+            zIndex: 101,
+            transition: "left 0.2s ease",
+          } : {}),
+        }}>
+          <SideNavigation
+            style={{ width: 240, height: "100%" }}
+            onSelectionChange={(e) => {
+              const item = e.detail.item;
+              const href = navItems.find((n) => n.text === item.text)?.href;
+              if (href) navigate(href);
+            }}
+          >
+            {navItems.map((item) => (
+              <SideNavigationItem
+                key={item.href}
+                text={item.text}
+                icon={item.icon}
+                selected={pathname === item.href || pathname.startsWith(item.href + "/")}
+                {...(item.href === "/coach" && unseenCount > 0 ? { counter: String(unseenCount) } : {})}
+              />
+            ))}
+          </SideNavigation>
+        </div>
 
         <main style={{
           flex: 1,
           overflow: "auto",
-          padding: "1.5rem 2rem",
+          padding: isMobile ? "1rem" : "1.5rem 2rem",
           background: "var(--sapBackgroundColor)",
         }}>
           {children}

@@ -112,6 +112,7 @@ export default function PlanDetailPage() {
     });
     setUsing(false);
     setUsed(true);
+    setTimeout(() => router.push("/plans"), 800);
   }
 
   async function completeWorkout(session: Session) {

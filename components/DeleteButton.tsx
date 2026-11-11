@@ -8,16 +8,18 @@ type Props = {
   url: string;
   redirectTo?: string;
   label?: string;
+  onDeleted?: () => void;
 };
 
-export function DeleteButton({ url, redirectTo, label = "Delete" }: Props) {
+export function DeleteButton({ url, redirectTo, label = "Delete", onDeleted }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
     setLoading(true);
     await fetch(url, { method: "DELETE" });
-    if (redirectTo) router.push(redirectTo);
+    if (onDeleted) onDeleted();
+    else if (redirectTo) router.push(redirectTo);
     else router.refresh();
   }
 
