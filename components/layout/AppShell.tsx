@@ -45,12 +45,17 @@ export function AppShell({
   const router = useRouter();
   const pathname = usePathname();
   const [unseenCount, setUnseenCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const { role } = useRole();
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     // placeholder for future notification badge
     setUnseenCount(0);
   }, [pathname]);
+
+  if (!mounted) return null;
 
   const navItems = allNavItems.filter(item => item.roles.includes(role));
 
