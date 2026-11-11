@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { workouts } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { createWorkoutSchema } from "@/lib/validations";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const session = await auth();
@@ -35,5 +36,7 @@ export async function POST(request: Request) {
     })
     .returning();
 
+  revalidatePath("/dashboard");
+  revalidatePath("/workouts");
   return NextResponse.json(row, { status: 201 });
 }

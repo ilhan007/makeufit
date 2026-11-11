@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   const [row] = await db
     .insert(exercises)
-    .values({ ...parsed.data, isBuiltin: false, userId: session.user.id })
+    .values({ ...parsed.data, isBuiltin: parsed.data.isBuiltin ?? false, userId: session.user.id })
     .returning();
 
   return NextResponse.json(row, { status: 201 });

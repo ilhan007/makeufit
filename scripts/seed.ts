@@ -1,7 +1,6 @@
 import { db } from "../db";
 import { exercises } from "../db/schema";
 import { EXERCISE_LIBRARY } from "../lib/exercise-library";
-import { sql } from "drizzle-orm";
 
 async function seed() {
   console.log("Seeding built-in exercises...");

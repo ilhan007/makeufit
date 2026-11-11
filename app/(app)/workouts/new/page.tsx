@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Ui5CustomEvent } from "@ui5/webcomponents-react";
 import type { InputDomRef, DatePickerDomRef } from "@ui5/webcomponents-react";
 import type { DatePickerChangeEventDetail } from "@ui5/webcomponents/dist/DatePicker.js";
@@ -18,6 +18,8 @@ import {
   Label,
   List,
   ListItemStandard,
+  Option,
+  Select,
   Text,
   Title,
 } from "@ui5/webcomponents-react";
@@ -47,6 +49,10 @@ let tempIdCounter = 0;
 
 export default function NewWorkoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get("templateId");
+  const cloneId = searchParams.get("cloneId");
+
   const [name, setName] = useState("");
   const [date, setDate] = useState(new Date().toLocaleDateString("en-CA")); // yyyy-MM-dd
   const [notes, setNotes] = useState("");
@@ -54,6 +60,13 @@ export default function NewWorkoutPage() {
   const [allExercises, setAllExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newExName, setNewExName] = useState("");
+  const [newExCategory, setNewExCategory] = useState("strength");
+  const [newExMuscleGroup, setNewExMuscleGroup] = useState("");
+  const [createSaving, setCreateSaving] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [myTemplates, setMyTemplates] = useState<Array<{ id: number; name: string; exerciseCount: number }>>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -63,12 +76,121 @@ export default function NewWorkoutPage() {
       .then(setAllExercises);
   }, []);
 
+  // Pre-populate from template if templateId is present
+  useEffect(() => {
+    if (!templateId) return;
+    fetch(`/api/templates/${templateId}`)
+      .then(r => r.json())
+      .then(template => {
+        if (!template || template.error) return;
+        setName(template.name);
+        if (template.notes) setNotes(template.notes);
+        setExerciseEntries(
+          template.exercises.map((ex: {
+            exerciseId: number; exerciseName: string; category: string; muscleGroup: string | null;
+            sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
+          }) => ({
+            exercise: { id: ex.exerciseId, name: ex.exerciseName, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
+            sets: ex.sets.map(s => ({
+              tempId: ++tempIdCounter,
+              setNumber: s.setNumber,
+              reps: s.reps != null ? String(s.reps) : "",
+              weightKg: s.weightKg != null ? String(s.weightKg) : "",
+              durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
+            })),
+          }))
+        );
+      });
+  }, [templateId]);
+
+  // Pre-populate from a cloned past workout
+  useEffect(() => {
+    if (!cloneId) return;
+    fetch(`/api/workouts/${cloneId}`)
+      .then(r => r.json())
+      .then(workout => {
+        if (!workout || workout.error) return;
+        setName(workout.name);
+        if (workout.notes) setNotes(workout.notes);
+        setExerciseEntries(
+          workout.exercises.map((ex: {
+            exerciseId: number; exerciseName: string; category: string; muscleGroup: string | null;
+            sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
+          }) => ({
+            exercise: { id: ex.exerciseId, name: ex.exerciseName, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
+            sets: ex.sets.map(s => ({
+              tempId: ++tempIdCounter,
+              setNumber: s.setNumber,
+              reps: s.reps != null ? String(s.reps) : "",
+              weightKg: s.weightKg != null ? String(s.weightKg) : "",
+              durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
+            })),
+          }))
+        );
+      });
+  }, [cloneId]);
+
   const filtered = allExercises.filter((e) =>
     e.name.toLowerCase().includes(search.toLowerCase())
   );
 
   function handleInput(setter: (v: string) => void) {
     return (e: Ui5CustomEvent<InputDomRef>) => setter(e.target.value ?? "");
+  }
+
+  function applyTemplate(template: {
+    name: string; notes?: string | null;
+    exercises: Array<{
+      exerciseId: number; exerciseName: string; category: string; muscleGroup: string | null;
+      sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }>;
+    }>;
+  }) {
+    setName(template.name);
+    if (template.notes) setNotes(template.notes);
+    setExerciseEntries(
+      template.exercises.map(ex => ({
+        exercise: { id: ex.exerciseId, name: ex.exerciseName, category: ex.category, muscleGroup: ex.muscleGroup, isBuiltin: true },
+        sets: ex.sets.map(s => ({
+          tempId: ++tempIdCounter,
+          setNumber: s.setNumber,
+          reps: s.reps != null ? String(s.reps) : "",
+          weightKg: s.weightKg != null ? String(s.weightKg) : "",
+          durationSeconds: s.durationSeconds != null ? String(s.durationSeconds) : "",
+        })),
+      }))
+    );
+    setTemplateDialogOpen(false);
+  }
+
+  function openTemplateDialog() {
+    fetch("/api/templates").then(r => r.json()).then(setMyTemplates);
+    setTemplateDialogOpen(true);
+  }
+
+  function pickTemplate(templateId: number) {
+    fetch(`/api/templates/${templateId}`).then(r => r.json()).then(applyTemplate);
+  }
+
+  async function createAndAdd() {
+    if (!newExName.trim()) return;
+    setCreateSaving(true);
+    const res = await fetch("/api/exercises", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newExName.trim(),
+        category: newExCategory,
+        muscleGroup: newExMuscleGroup || undefined,
+      }),
+    });
+    if (res.ok) {
+      const ex: Exercise = await res.json();
+      setAllExercises(prev => [...prev, ex]);
+      addExercise(ex);
+      setCreating(false);
+      setNewExName(""); setNewExCategory("strength"); setNewExMuscleGroup("");
+    }
+    setCreateSaving(false);
   }
 
   function addExercise(ex: Exercise) {
@@ -212,7 +334,10 @@ export default function NewWorkoutPage() {
       ))}
 
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginTop: "1rem" }}>
-        <Button onClick={() => setDialogOpen(true)}>Add Exercise</Button>
+        <FlexBox style={{ gap: "0.5rem" }}>
+          <Button onClick={() => setDialogOpen(true)}>Add Exercise</Button>
+          <Button design="Default" onClick={openTemplateDialog}>From Plan</Button>
+        </FlexBox>
         <FlexBox style={{ gap: "0.5rem" }}>
           {error && <Text style={{ color: "var(--sapNegativeTextColor)", alignSelf: "center" }}>{error}</Text>}
           <Button design="Emphasized" onClick={save} disabled={saving}>
@@ -223,30 +348,118 @@ export default function NewWorkoutPage() {
 
       <Dialog
         open={dialogOpen}
-        headerText="Add Exercise"
-        onClose={() => setDialogOpen(false)}
+        headerText={creating ? "New Exercise" : "Add Exercise"}
+        onClose={() => { setDialogOpen(false); setCreating(false); setSearch(""); }}
         style={{ width: 480 }}
-        footer={<Button onClick={() => setDialogOpen(false)}>Cancel</Button>}
+        footer={
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
+            {creating ? (
+              <>
+                <Button design="Transparent" onClick={() => setCreating(false)}>← Back</Button>
+                <Button design="Emphasized" onClick={createAndAdd} disabled={createSaving || !newExName.trim()}>
+                  {createSaving ? "Saving..." : "Save & Add"}
+                </Button>
+              </>
+            ) : (
+              <Button design="Transparent" onClick={() => { setDialogOpen(false); setSearch(""); }}>Cancel</Button>
+            )}
+          </div>
+        }
       >
-        <div style={{ padding: "1rem" }}>
-          <Input
-            placeholder="Search exercises..."
-            value={search}
-            onInput={handleInput(setSearch)}
-            showClearIcon
-            style={{ width: "100%", marginBottom: "0.5rem" }}
-          />
-          <List style={{ maxHeight: 360, overflowY: "auto" }}>
-            {filtered.map((ex) => (
-              <ListItemStandard
-                key={ex.id}
-                description={ex.muscleGroup ?? ex.category}
-                onClick={() => addExercise(ex)}
-              >
-                {ex.name}
-              </ListItemStandard>
-            ))}
-          </List>
+        {creating ? (
+          <div style={{ padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div>
+              <Label required>Name</Label>
+              <Input value={newExName} onInput={(e: Ui5CustomEvent<InputDomRef>) => setNewExName(e.target.value ?? "")} style={{ width: "100%" }} placeholder="e.g. Bulgarian Split Squat" />
+            </div>
+            <div>
+              <Label required>Category</Label>
+              <Select style={{ width: "100%" }} onChange={(e) => setNewExCategory(e.detail.selectedOption.value as string)}>
+                <Option value="strength" selected={newExCategory === "strength"}>Strength</Option>
+                <Option value="cardio" selected={newExCategory === "cardio"}>Cardio</Option>
+                <Option value="flexibility" selected={newExCategory === "flexibility"}>Flexibility</Option>
+                <Option value="other" selected={newExCategory === "other"}>Other</Option>
+              </Select>
+            </div>
+            <div>
+              <Label>Muscle Group</Label>
+              <Select style={{ width: "100%" }} onChange={(e) => setNewExMuscleGroup(e.detail.selectedOption.value as string)}>
+                <Option value="" selected={!newExMuscleGroup}>— None —</Option>
+                <Option value="chest">Chest</Option>
+                <Option value="back">Back</Option>
+                <Option value="legs">Legs</Option>
+                <Option value="shoulders">Shoulders</Option>
+                <Option value="arms">Arms</Option>
+                <Option value="core">Core</Option>
+                <Option value="full_body">Full Body</Option>
+              </Select>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: "0.75rem 1rem 0" }}>
+            <Input
+              placeholder="Search exercises..."
+              value={search}
+              onInput={handleInput(setSearch)}
+              showClearIcon
+              style={{ width: "100%", marginBottom: "0.75rem" }}
+            />
+            {filtered.length > 0 ? (
+              <List style={{ maxHeight: 320, overflowY: "auto" }}>
+                {filtered.map((ex) => (
+                  <ListItemStandard
+                    key={ex.id}
+                    description={ex.muscleGroup ? ex.muscleGroup.replace(/_/g, " ") : ex.category}
+                    onClick={() => addExercise(ex)}
+                  >
+                    {ex.name}
+                  </ListItemStandard>
+                ))}
+              </List>
+            ) : (
+              <div style={{ padding: "0.5rem 0 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <Text style={{ color: "var(--sapNeutralTextColor)" }}>No exercises found.</Text>
+                <Button
+                  design="Default"
+                  onClick={() => { setNewExName(search); setCreating(true); }}
+                >
+                  + Create &ldquo;{search || "new exercise"}&rdquo;
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={templateDialogOpen}
+        headerText="Start from Plan"
+        onClose={() => setTemplateDialogOpen(false)}
+        style={{ width: 480 }}
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
+            <Button design="Transparent" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
+          </div>
+        }
+      >
+        <div style={{ padding: "0.75rem 1rem 0" }}>
+          {myTemplates.length === 0 ? (
+            <Text style={{ color: "var(--sapNeutralTextColor)" }}>
+              No plans yet. Create one in the Plans section.
+            </Text>
+          ) : (
+            <List style={{ maxHeight: 360, overflowY: "auto" }}>
+              {myTemplates.map(t => (
+                <ListItemStandard
+                  key={t.id}
+                  description={`${t.exerciseCount} exercise${t.exerciseCount !== 1 ? "s" : ""}`}
+                  onClick={() => pickTemplate(t.id)}
+                >
+                  {t.name}
+                </ListItemStandard>
+              ))}
+            </List>
+          )}
         </div>
       </Dialog>
     </div>

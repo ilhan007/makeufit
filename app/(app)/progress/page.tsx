@@ -16,7 +16,12 @@ export default async function ProgressPage() {
 
     db.select({ id: exercises.id, name: exercises.name })
       .from(exercises)
-      .where(eq(exercises.isBuiltin, true)),
+      .where(eq(exercises.isBuiltin, true))
+      .union(
+        db.select({ id: exercises.id, name: exercises.name })
+          .from(exercises)
+          .where(eq(exercises.userId, userId))
+      ),
 
     db.select({
       date: workouts.date,

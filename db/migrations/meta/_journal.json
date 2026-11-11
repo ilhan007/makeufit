@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794329957031,
+      "tag": "0000_round_amphibian",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794330986464,
+      "tag": "0001_minor_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794332911682,
+      "tag": "0002_fine_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794393530020,
+      "tag": "0003_stormy_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794397734385,
+      "tag": "0004_bizarre_mariko_yashida",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794400000000,
+      "tag": "0005_plans_replace_templates",
+      "breakpoints": true
+    }
+  ]
+}

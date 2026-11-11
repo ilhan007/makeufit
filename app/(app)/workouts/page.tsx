@@ -3,13 +3,18 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { workouts, workoutExercises } from "@/db/schema";
 import { eq, desc, count } from "drizzle-orm";
+import { EmptyState } from "@/components/EmptyState";
+import { DeleteButton } from "@/components/DeleteButton";
+import "@ui5/webcomponents-icons/dist/copy.js";
 import {
   Button,
   Card,
+  CardHeader,
   FlexBox,
   FlexBoxJustifyContent,
+  Icon,
   List,
-  ListItemStandard,
+  ListItemCustom,
   Title,
 } from "@ui5/webcomponents-react";
 
@@ -40,21 +45,36 @@ export default async function WorkoutsPage() {
         </Link>
       </FlexBox>
 
-      <Card>
+      <Card header={<CardHeader titleText={`${rows.length} session${rows.length !== 1 ? "s" : ""}`} />}>
         {rows.length === 0 ? (
-          <div style={{ padding: "1rem" }}>
-            <ListItemStandard>No workouts yet. Start logging!</ListItemStandard>
-          </div>
+          <EmptyState
+            name="NoActivities"
+            titleText="No workouts logged yet"
+            subtitleText="Hit New Workout to log your first session"
+          />
         ) : (
           <List>
             {rows.map((w) => (
-              <Link key={w.id} href={`/workouts/${w.id}`} style={{ textDecoration: "none" }}>
-                <ListItemStandard
-                  description={`${new Date(w.date).toLocaleDateString()} · ${w.exerciseCount} exercise${w.exerciseCount !== 1 ? "s" : ""}`}
-                >
-                  {w.name}
-                </ListItemStandard>
-              </Link>
+              <ListItemCustom key={w.id} style={{ padding: "0.5rem 1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                  <Link href={`/workouts/${w.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: "var(--sapTextColor)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {w.name}
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", marginTop: 2 }}>
+                      {new Date(w.date).toLocaleDateString()} · {w.exerciseCount} exercise{w.exerciseCount !== 1 ? "s" : ""}
+                    </div>
+                  </Link>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0, marginLeft: "1rem" }}>
+                    <Link href={`/workouts/new?cloneId=${w.id}`}>
+                      <Button design="Transparent" tooltip="Clone workout">
+                        <Icon name="copy" />
+                      </Button>
+                    </Link>
+                    <DeleteButton url={`/api/workouts/${w.id}`} label="Remove" />
+                  </div>
+                </div>
+              </ListItemCustom>
             ))}
           </List>
         )}

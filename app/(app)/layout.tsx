@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { AppShell } from "@/components/layout/AppShell";
+import { RoleProvider } from "@/components/layout/RoleContext";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  return <AppShell userName={session.user?.name}>{children}</AppShell>;
+  return (
+    <RoleProvider>
+      <AppShell userName={session.user?.name} userImage={session.user?.image}>{children}</AppShell>
+    </RoleProvider>
+  );
 }

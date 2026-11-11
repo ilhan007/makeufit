@@ -4,8 +4,9 @@ import { ThemeProvider } from "@ui5/webcomponents-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MakeuFit",
+  title: "MakeUFit",
   description: "Your personal fitness tracker",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({

@@ -4,6 +4,8 @@ import { workouts, workoutExercises, workoutSets, exercises } from "@/db/schema"
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { DeleteButton } from "@/components/DeleteButton";
+import "@ui5/webcomponents-icons/dist/arrow-left.js";
 import {
   Button,
   Card,
@@ -56,15 +58,19 @@ export default async function WorkoutDetailPage({ params }: { params: { id: stri
 
   return (
     <div>
+      <Link href="/workouts" style={{ textDecoration: "none" }}>
+        <Button design="Transparent" icon="arrow-left" style={{ marginBottom: "1rem" }} />
+      </Link>
+
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
         <div>
           <Title level="H2">{workout.name}</Title>
           <Text>{new Date(workout.date).toLocaleDateString()}</Text>
           {workout.notes && <Text style={{ display: "block", marginTop: 4 }}>{workout.notes}</Text>}
         </div>
-        <Link href="/workouts">
-          <Button>Back</Button>
-        </Link>
+        <FlexBox style={{ gap: "0.5rem" }}>
+          <DeleteButton url={`/api/workouts/${workoutId}`} redirectTo="/workouts" label="Delete" />
+        </FlexBox>
       </FlexBox>
 
       {Array.from(exerciseMap.values()).map(({ name, sets }) => (
