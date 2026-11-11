@@ -30,16 +30,21 @@ export async function POST(request: Request) {
   const parsed = createWorkoutSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [row] = await db
-    .insert(workouts)
-    .values({
-      ...parsed.data,
-      date: new Date(parsed.data.date),
-      userId: session.user.id,
-    })
-    .returning();
+  try {
+    const [row] = await db
+      .insert(workouts)
+      .values({
+        ...parsed.data,
+        date: new Date(parsed.data.date),
+        userId: session.user.id,
+      })
+      .returning();
 
-  revalidatePath("/dashboard");
-  revalidatePath("/workouts");
-  return NextResponse.json(row, { status: 201 });
+    revalidatePath("/dashboard");
+    revalidatePath("/workouts");
+    return NextResponse.json(row, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/workouts error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

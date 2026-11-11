@@ -17,7 +17,10 @@ export function getDb() {
 
 // Backwards-compat alias so existing imports of { db } still work
 export const db: ReturnType<typeof drizzle> = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(_target, prop) {
-    return getDb()[prop as keyof ReturnType<typeof drizzle>];
+  get(_target, prop, receiver) {
+    const instance = getDb();
+    const value = instance[prop as keyof ReturnType<typeof drizzle>];
+    if (typeof value === "function") return value.bind(instance);
+    return value;
   },
 });
