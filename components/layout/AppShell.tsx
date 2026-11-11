@@ -62,7 +62,6 @@ export function AppShell({
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <ShellBar
         primaryTitle="MakeUFit"
-        secondaryTitle={userName ?? undefined}
         onLogoClick={() => router.push("/dashboard")}
         style={{ flexShrink: 0 }}
         logo={
