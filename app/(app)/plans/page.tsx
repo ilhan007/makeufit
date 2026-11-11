@@ -42,7 +42,7 @@ export default function PlansPage() {
   return (
     <div>
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
-        <Title level="H2">Plans</Title>
+        <Title level="H2">Workout Plans</Title>
         <Link href="/plans/new">
           <Button design="Emphasized">New Plan</Button>
         </Link>

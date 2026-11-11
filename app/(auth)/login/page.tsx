@@ -54,7 +54,7 @@ export default function LoginPage() {
           <div style={{ marginBottom: "2rem" }}>
             {[
               { icon: "🏋️", title: "Log Workouts", desc: "Track exercises, sets, reps and weights" },
-              { icon: "📋", title: "Training Plans", desc: "Follow structured plans from your coach or create your own" },
+              { icon: "📋", title: "Workout Plans", desc: "Follow structured plans from your coach or create your own" },
               { icon: "🤝", title: "Find a Coach", desc: "Connect with a coach to get personalized guidance" },
               { icon: "📊", title: "Body Metrics", desc: "Monitor weight, body fat and measurements" },
               { icon: "📈", title: "Progress Charts", desc: "Visualize your gains over time" },

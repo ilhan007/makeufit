@@ -27,7 +27,7 @@ import type { ReactNode } from "react";
 const allNavItems = [
   { text: "Dashboard", icon: "home", href: "/dashboard", roles: ["athlete", "coach", "both"] },
   { text: "Workout History", icon: "physical-activity", href: "/workouts", roles: ["athlete", "coach", "both"] },
-  { text: "Plans", icon: "document-text", href: "/plans", roles: ["athlete", "coach", "both"] },
+  { text: "Workout Plans", icon: "document-text", href: "/plans", roles: ["athlete", "coach", "both"] },
   { text: "Profile", icon: "bbyd-dashboard", href: "/metrics", roles: ["athlete", "coach", "both"] },
   { text: "My Coach", icon: "manager", href: "/coach", roles: ["athlete", "both"] },
   { text: "Athletes", icon: "group", href: "/athletes", roles: ["coach", "both"] },
