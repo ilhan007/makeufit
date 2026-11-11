@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -10,13 +10,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
-      const existing = await db
+      const existing = await getDb()
         .select()
         .from(users)
         .where(eq(users.email, user.email))
         .limit(1);
       if (existing.length === 0) {
-        await db.insert(users).values({
+        await getDb().insert(users).values({
           id: user.id ?? crypto.randomUUID(),
           name: user.name,
           email: user.email,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { bodyMetrics, workouts, workoutExercises, workoutSets, exercises } from "@/db/schema";
 import { eq, asc, or } from "drizzle-orm";
 
@@ -13,16 +13,16 @@ export async function GET() {
   const userId = session.user.id;
 
   const [metricsData, exerciseList, setsData] = await Promise.all([
-    db.select({ date: bodyMetrics.date, weightKg: bodyMetrics.weightKg })
+    getDb().select({ date: bodyMetrics.date, weightKg: bodyMetrics.weightKg })
       .from(bodyMetrics)
       .where(eq(bodyMetrics.userId, userId))
       .orderBy(asc(bodyMetrics.date)),
 
-    db.select({ id: exercises.id, name: exercises.name })
+    getDb().select({ id: exercises.id, name: exercises.name })
       .from(exercises)
       .where(or(eq(exercises.isBuiltin, true), eq(exercises.userId, userId))),
 
-    db.select({
+    getDb().select({
       date: workouts.date,
       exerciseId: workoutExercises.exerciseId,
       weightKg: workoutSets.weightKg,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { coachRelationships, users, workouts } from "@/db/schema";
 import { and, eq, desc } from "drizzle-orm";
 
@@ -11,7 +11,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const athletes = await db
+  const athletes = await getDb()
     .select({
       relationshipId: coachRelationships.id,
       athleteId: users.id,
@@ -25,7 +25,7 @@ export async function GET() {
 
   const result = await Promise.all(
     athletes.map(async (a) => {
-      const [lastWorkout] = await db
+      const [lastWorkout] = await getDb()
         .select({ date: workouts.date, name: workouts.name })
         .from(workouts)
         .where(eq(workouts.userId, a.athleteId))

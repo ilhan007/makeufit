@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { exercises } from "@/db/schema";
 import { eq, or } from "drizzle-orm";
 import { createExerciseSchema } from "@/lib/validations";
@@ -12,7 +12,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
+  const rows = await getDb()
     .select()
     .from(exercises)
     .where(or(eq(exercises.isBuiltin, true), eq(exercises.userId, session.user.id)));
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const parsed = createExerciseSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [row] = await db
+  const [row] = await getDb()
     .insert(exercises)
     .values({ ...parsed.data, isBuiltin: parsed.data.isBuiltin ?? false, userId: session.user.id })
     .returning();

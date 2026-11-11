@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { exercises } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { createExerciseSchema } from "@/lib/validations";
@@ -17,7 +17,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const parsed = createExerciseSchema.partial().safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [row] = await db
+  const [row] = await getDb()
     .update(exercises)
     .set(parsed.data)
     .where(and(eq(exercises.id, id), eq(exercises.userId, session.user.id), eq(exercises.isBuiltin, false)))
@@ -32,7 +32,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const deleted = await db
+  const deleted = await getDb()
     .delete(exercises)
     .where(and(eq(exercises.id, id), eq(exercises.userId, session.user.id), eq(exercises.isBuiltin, false)))
     .returning();

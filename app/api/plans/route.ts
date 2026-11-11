@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { plans, planSessions } from "@/db/schema";
 import { eq, count, or } from "drizzle-orm";
 import { z } from "zod";
@@ -20,7 +20,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Author's own plans + public plans
-  const rows = await db
+  const rows = await getDb()
     .select({
       id: plans.id,
       name: plans.name,
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const parsed = createPlanSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [plan] = await db
+  const [plan] = await getDb()
     .insert(plans)
     .values({ ...parsed.data, authorId: session.user.id })
     .returning();

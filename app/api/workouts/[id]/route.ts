@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workouts, workoutExercises, workoutSets, exercises } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { updateWorkoutSchema } from "@/lib/validations";
@@ -13,14 +13,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const [workout] = await db
+  const [workout] = await getDb()
     .select()
     .from(workouts)
     .where(and(eq(workouts.id, id), eq(workouts.userId, session.user.id)));
 
   if (!workout) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       weId: workoutExercises.id,
       orderIndex: workoutExercises.orderIndex,
@@ -87,7 +87,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const updateData: Record<string, unknown> = { ...parsed.data };
   if (parsed.data.date) updateData.date = new Date(parsed.data.date);
 
-  const [row] = await db
+  const [row] = await getDb()
     .update(workouts)
     .set(updateData)
     .where(and(eq(workouts.id, id), eq(workouts.userId, session.user.id)))
@@ -102,7 +102,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const deleted = await db
+  const deleted = await getDb()
     .delete(workouts)
     .where(and(eq(workouts.id, id), eq(workouts.userId, session.user.id)))
     .returning();

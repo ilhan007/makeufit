@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -12,7 +12,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [user] = await db.select({ role: users.role }).from(users).where(eq(users.id, session.user.id));
+  const [user] = await getDb().select({ role: users.role }).from(users).where(eq(users.id, session.user.id));
   return NextResponse.json({ role: user?.role ?? "athlete" });
 }
 
@@ -26,6 +26,6 @@ export async function PATCH(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid role" }, { status: 400 });
 
-  await db.update(users).set({ role: parsed.data.role }).where(eq(users.id, session.user.id));
+  await getDb().update(users).set({ role: parsed.data.role }).where(eq(users.id, session.user.id));
   return NextResponse.json({ role: parsed.data.role });
 }

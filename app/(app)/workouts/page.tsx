@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workouts, workoutExercises } from "@/db/schema";
 import { eq, desc, count } from "drizzle-orm";
 import { EmptyState } from "@/components/EmptyState";
@@ -22,7 +22,7 @@ export default async function WorkoutsPage() {
   const session = await auth();
   const userId = session!.user!.id!;
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       id: workouts.id,
       name: workouts.name,

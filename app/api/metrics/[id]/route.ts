@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { bodyMetrics } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -12,7 +12,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const deleted = await db
+  const deleted = await getDb()
     .delete(bodyMetrics)
     .where(and(eq(bodyMetrics.id, id), eq(bodyMetrics.userId, session.user.id)))
     .returning();

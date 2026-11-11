@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { coachRelationships, workouts, workoutExercises } from "@/db/schema";
 import { and, eq, desc, count } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 async function verifyCoachAccess(coachId: string, athleteId: string) {
-  const [rel] = await db
+  const [rel] = await getDb()
     .select()
     .from(coachRelationships)
     .where(and(
@@ -26,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { athleteId: stri
   const hasAccess = await verifyCoachAccess(session.user.id, params.athleteId);
   if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       id: workouts.id,
       name: workouts.name,

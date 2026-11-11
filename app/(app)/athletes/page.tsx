@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { coachRelationships, users, workouts } from "@/db/schema";
 import { and, eq, desc, count } from "drizzle-orm";
 import Link from "next/link";
@@ -22,7 +22,7 @@ export default async function AthletesPage() {
   const userId = session!.user!.id!;
 
   const [pendingRequests, acceptedAthletes] = await Promise.all([
-    db.select({
+    getDb().select({
       id: coachRelationships.id,
       athleteName: users.name,
       athleteEmail: users.email,
@@ -34,7 +34,7 @@ export default async function AthletesPage() {
       .innerJoin(users, eq(users.id, coachRelationships.athleteId))
       .where(and(eq(coachRelationships.coachId, userId), eq(coachRelationships.status, "pending"))),
 
-    db.select({
+    getDb().select({
       relationshipId: coachRelationships.id,
       athleteId: users.id,
       athleteName: users.name,
@@ -49,12 +49,12 @@ export default async function AthletesPage() {
   const athletesWithStats = await Promise.all(
     acceptedAthletes.map(async (a) => {
       const [lastWorkout, [wCount]] = await Promise.all([
-        db.select({ date: workouts.date, name: workouts.name })
+        getDb().select({ date: workouts.date, name: workouts.name })
           .from(workouts)
           .where(eq(workouts.userId, a.athleteId))
           .orderBy(desc(workouts.date))
           .limit(1),
-        db.select({ count: count() }).from(workouts).where(eq(workouts.userId, a.athleteId)),
+        getDb().select({ count: count() }).from(workouts).where(eq(workouts.userId, a.athleteId)),
       ]);
       return { ...a, lastWorkout: lastWorkout[0] ?? null, totalWorkouts: wCount.count };
     })

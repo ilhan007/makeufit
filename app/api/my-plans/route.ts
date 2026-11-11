@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { athletePlans, plans } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -17,7 +17,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       id: athletePlans.id,
       planId: plans.id,
@@ -43,13 +43,13 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [plan] = await db.select().from(plans).where(eq(plans.id, parsed.data.planId));
+  const [plan] = await getDb().select().from(plans).where(eq(plans.id, parsed.data.planId));
   if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404 });
   if (!plan.isPublic && plan.authorId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [row] = await db
+  const [row] = await getDb()
     .insert(athletePlans)
     .values({
       athleteId: session.user.id,

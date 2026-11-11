@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workoutExercises, workoutSets, workouts } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { addSetSchema } from "@/lib/validations";
@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const workoutId = parseInt(params.id);
 
   // Verify workout ownership
-  const [workout] = await db
+  const [workout] = await getDb()
     .select()
     .from(workouts)
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, session.user.id)));
@@ -26,23 +26,23 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   // Find or create workout_exercise entry
-  let [we] = await db
+  let [we] = await getDb()
     .select()
     .from(workoutExercises)
     .where(and(eq(workoutExercises.workoutId, workoutId), eq(workoutExercises.exerciseId, parsed.data.exerciseId)));
 
   if (!we) {
-    const existingCount = await db
+    const existingCount = await getDb()
       .select()
       .from(workoutExercises)
       .where(eq(workoutExercises.workoutId, workoutId));
-    [we] = await db
+    [we] = await getDb()
       .insert(workoutExercises)
       .values({ workoutId, exerciseId: parsed.data.exerciseId, orderIndex: existingCount.length })
       .returning();
   }
 
-  const [set] = await db
+  const [set] = await getDb()
     .insert(workoutSets)
     .values({
       workoutExerciseId: we.id,
@@ -66,7 +66,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   const { workoutSetId } = body as { workoutSetId: number };
 
   // Verify ownership via join
-  const [row] = await db
+  const [row] = await getDb()
     .select()
     .from(workoutSets)
     .innerJoin(workoutExercises, eq(workoutSets.workoutExerciseId, workoutExercises.id))
@@ -75,6 +75,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
   if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await db.delete(workoutSets).where(eq(workoutSets.id, workoutSetId));
+  await getDb().delete(workoutSets).where(eq(workoutSets.id, workoutSetId));
   return new NextResponse(null, { status: 204 });
 }

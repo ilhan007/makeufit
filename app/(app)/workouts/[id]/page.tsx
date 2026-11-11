@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workouts, workoutExercises, workoutSets, exercises } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -26,14 +26,14 @@ export default async function WorkoutDetailPage({ params }: { params: { id: stri
   const userId = session!.user!.id!;
   const workoutId = parseInt(params.id);
 
-  const [workout] = await db
+  const [workout] = await getDb()
     .select()
     .from(workouts)
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)));
 
   if (!workout) notFound();
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       weId: workoutExercises.id,
       orderIndex: workoutExercises.orderIndex,

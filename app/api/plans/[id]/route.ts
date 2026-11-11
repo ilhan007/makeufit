@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { plans, planSessions, planSessionExercises, planSessionSets, exercises, athletePlans } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -12,20 +12,20 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+  const [plan] = await getDb().select().from(plans).where(eq(plans.id, id));
   if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Allow if author, public, or enrolled athlete
   const canAccess = plan.authorId === session.user.id || plan.isPublic;
   if (!canAccess) {
-    const [enrollment] = await db
+    const [enrollment] = await getDb()
       .select()
       .from(athletePlans)
       .where(and(eq(athletePlans.planId, id), eq(athletePlans.athleteId, session.user.id)));
     if (!enrollment) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rows = await db
+  const rows = await getDb()
     .select({
       sessionId: planSessions.id,
       dayNumber: planSessions.dayNumber,
@@ -83,7 +83,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const id = parseInt(params.id);
-  const deleted = await db
+  const deleted = await getDb()
     .delete(plans)
     .where(and(eq(plans.id, id), eq(plans.authorId, session.user.id)))
     .returning();

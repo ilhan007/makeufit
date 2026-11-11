@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workouts, bodyMetrics } from "@/db/schema";
 import { eq, desc, gte, count, and } from "drizzle-orm";
 import Link from "next/link";
@@ -37,10 +37,10 @@ export default async function DashboardPage() {
   weekAgo.setDate(weekAgo.getDate() - 7);
 
   const [totalWorkouts, recentWorkouts, latestMetric, weekWorkouts] = await Promise.all([
-    db.select({ count: count() }).from(workouts).where(eq(workouts.userId, userId)),
-    db.select().from(workouts).where(eq(workouts.userId, userId)).orderBy(desc(workouts.date)).limit(5),
-    db.select().from(bodyMetrics).where(eq(bodyMetrics.userId, userId)).orderBy(desc(bodyMetrics.date)).limit(1),
-    db.select({ count: count() }).from(workouts).where(and(eq(workouts.userId, userId), gte(workouts.date, weekAgo))),
+    getDb().select({ count: count() }).from(workouts).where(eq(workouts.userId, userId)),
+    getDb().select().from(workouts).where(eq(workouts.userId, userId)).orderBy(desc(workouts.date)).limit(5),
+    getDb().select().from(bodyMetrics).where(eq(bodyMetrics.userId, userId)).orderBy(desc(bodyMetrics.date)).limit(1),
+    getDb().select({ count: count() }).from(workouts).where(and(eq(workouts.userId, userId), gte(workouts.date, weekAgo))),
   ]);
 
   const total = totalWorkouts[0].count;

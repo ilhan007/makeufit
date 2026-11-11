@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { plans, athletePlans, coachRelationships } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
+  const [plan] = await getDb().select().from(plans).where(eq(plans.id, planId));
   if (!plan) return NextResponse.json({ error: "Plan not found" }, { status: 404 });
 
   // Coach must own the plan and have an accepted relationship with the athlete
@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [rel] = await db
+  const [rel] = await getDb()
     .select()
     .from(coachRelationships)
     .where(and(
@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   if (!rel) return NextResponse.json({ error: "No accepted relationship with this athlete" }, { status: 403 });
 
-  const [row] = await db
+  const [row] = await getDb()
     .insert(athletePlans)
     .values({ planId, athleteId: parsed.data.athleteId, assignedBy: session.user.id })
     .returning();

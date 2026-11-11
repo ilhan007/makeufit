@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { workouts } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { createWorkoutSchema } from "@/lib/validations";
@@ -13,7 +13,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
+  const rows = await getDb()
     .select()
     .from(workouts)
     .where(eq(workouts.userId, session.user.id))
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   try {
-    const [row] = await db
+    const [row] = await getDb()
       .insert(workouts)
       .values({
         ...parsed.data,

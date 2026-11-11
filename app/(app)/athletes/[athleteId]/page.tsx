@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { coachRelationships, users, workouts, bodyMetrics } from "@/db/schema";
 import { and, eq, desc, count } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -24,7 +24,7 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
   const session = await auth();
   const coachId = session!.user!.id!;
 
-  const [rel] = await db
+  const [rel] = await getDb()
     .select()
     .from(coachRelationships)
     .where(and(
@@ -35,14 +35,14 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
 
   if (!rel) notFound();
 
-  const [athlete] = await db.select().from(users).where(eq(users.id, params.athleteId));
+  const [athlete] = await getDb().select().from(users).where(eq(users.id, params.athleteId));
   if (!athlete) notFound();
 
   const [recentWorkouts, latestMetric, [wCount], metrics] = await Promise.all([
-    db.select().from(workouts).where(eq(workouts.userId, params.athleteId)).orderBy(desc(workouts.date)).limit(5),
-    db.select().from(bodyMetrics).where(eq(bodyMetrics.userId, params.athleteId)).orderBy(desc(bodyMetrics.date)).limit(1),
-    db.select({ count: count() }).from(workouts).where(eq(workouts.userId, params.athleteId)),
-    db.select().from(bodyMetrics).where(eq(bodyMetrics.userId, params.athleteId)).orderBy(desc(bodyMetrics.date)).limit(10),
+    getDb().select().from(workouts).where(eq(workouts.userId, params.athleteId)).orderBy(desc(workouts.date)).limit(5),
+    getDb().select().from(bodyMetrics).where(eq(bodyMetrics.userId, params.athleteId)).orderBy(desc(bodyMetrics.date)).limit(1),
+    getDb().select({ count: count() }).from(workouts).where(eq(workouts.userId, params.athleteId)),
+    getDb().select().from(bodyMetrics).where(eq(bodyMetrics.userId, params.athleteId)).orderBy(desc(bodyMetrics.date)).limit(10),
   ]);
 
   const initials = athlete.name ? athlete.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
