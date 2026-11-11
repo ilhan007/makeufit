@@ -22,9 +22,10 @@ export default function LoginPage() {
             background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 1.25rem",
-            fontSize: 28,
           }}>
-            💪
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="36" height="36">
+              <path fill="#ffffff" d="M8.715 4.006c.241-.03.5.01.647.238.336.523.641 1.041 1.08 1.491.653.67 1.582 1.284 2.809 1.284a.75.75 0 0 1 0 1.5c-1.915 0-3.26-1.04-4.07-1.94l-.362 1.668 1.944 2.032c.133.14.208.326.208.519v4.452a.75.75 0 0 1-1.5 0v-4.151L8.264 9.836 7.192 12.5a.75.75 0 0 1-.89.444l-3.747-1.01a.75.75 0 1 1 .39-1.448l3.103.836 1.227-3.045.576-2.653-2.331.291v1.863a.751.751 0 0 1-1.5 0V5.255a.75.75 0 0 1 .656-.744l4.04-.505ZM9.5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+            </svg>
           </div>
           <h1 style={{
             color: "#f8fafc",
@@ -53,13 +54,15 @@ export default function LoginPage() {
           <div style={{ marginBottom: "2rem" }}>
             {[
               { icon: "🏋️", title: "Log Workouts", desc: "Track exercises, sets, reps and weights" },
+              { icon: "📋", title: "Training Plans", desc: "Follow structured plans from your coach or create your own" },
+              { icon: "🤝", title: "Find a Coach", desc: "Connect with a coach to get personalized guidance" },
               { icon: "📊", title: "Body Metrics", desc: "Monitor weight, body fat and measurements" },
               { icon: "📈", title: "Progress Charts", desc: "Visualize your gains over time" },
-            ].map((f) => (
+            ].map((f, i, arr) => (
               <div key={f.title} style={{
                 display: "flex", alignItems: "center", gap: "1rem",
                 padding: "0.75rem 0",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.07)" : "none",
               }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{f.icon}</span>
                 <div>
