@@ -48,7 +48,6 @@ export function AppShell({
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
-  const avatarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { role } = useRole();
 
@@ -77,53 +76,12 @@ export function AppShell({
     ? userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
-  function openMenu() {
-    if (avatarRef.current) {
-      const rect = avatarRef.current.getBoundingClientRect();
-      setMenuPos({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
-      });
-    }
+  function handleProfileClick(e: CustomEvent) {
+    const target = e.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
     setMenuOpen(o => !o);
   }
-
-  const dropdown = menuOpen ? createPortal(
-    <div
-      ref={menuRef}
-      style={{
-        position: "fixed",
-        top: menuPos.top,
-        right: menuPos.right,
-        background: "#fff",
-        border: "1px solid #e2e8f0",
-        borderRadius: 8,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-        minWidth: 160,
-        zIndex: 9999,
-        overflow: "hidden",
-      }}
-    >
-      <button
-        onClick={() => { setMenuOpen(false); router.push("/profile"); }}
-        style={menuItemStyle}
-        onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
-        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-      >
-        Profile
-      </button>
-      <div style={{ height: 1, background: "#e2e8f0" }} />
-      <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
-        style={{ ...menuItemStyle, color: "#ef4444" }}
-        onMouseEnter={e => (e.currentTarget.style.background = "#fef2f2")}
-        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-      >
-        Log Out
-      </button>
-    </div>,
-    document.body
-  ) : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
@@ -139,23 +97,55 @@ export function AppShell({
           />
         }
         profile={
-          <div ref={avatarRef} onClick={openMenu} style={{ cursor: "pointer" }}>
-            <Avatar
-              initials={userImage ? undefined : initials}
-              colorScheme="Accent6"
-              size="XS"
-              accessibleName={userName ?? "User"}
-              style={{ pointerEvents: "none" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {userImage && <img src={userImage} alt={userName ?? "User"} />}
-            </Avatar>
-          </div>
+          <Avatar
+            initials={userImage ? undefined : initials}
+            colorScheme="Accent6"
+            size="XS"
+            accessibleName={userName ?? "User"}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {userImage && <img src={userImage} alt={userName ?? "User"} />}
+          </Avatar>
         }
-      >
-      </ShellBar>
+        onProfileClick={handleProfileClick}
+      />
 
-      {dropdown}
+      {menuOpen && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: menuPos.top,
+            right: menuPos.right,
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            minWidth: 160,
+            zIndex: 9999,
+            overflow: "hidden",
+          }}
+        >
+          <button
+            onClick={() => { setMenuOpen(false); router.push("/profile"); }}
+            style={menuItemStyle}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            Profile
+          </button>
+          <div style={{ height: 1, background: "#e2e8f0" }} />
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            style={{ ...menuItemStyle, color: "#ef4444" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#fef2f2")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            Log Out
+          </button>
+        </div>,
+        document.body
+      )}
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <SideNavigation
