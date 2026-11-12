@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import type { Ui5CustomEvent, InputDomRef } from "@ui5/webcomponents-react";
 import {
   Button,
@@ -31,6 +33,7 @@ let tempIdCounter = 0;
 
 export default function NewPlanPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [weeksCount, setWeeksCount] = useState("4");
@@ -62,7 +65,7 @@ export default function NewPlanPage() {
 
   function addSession() {
     const nextDay = sessions.length > 0 ? Math.max(...sessions.map(s => s.dayNumber)) + 1 : 1;
-    setSessions(prev => [...prev, { tempId: ++tempIdCounter, dayNumber: nextDay, name: `Day ${nextDay}`, exercises: [] }]);
+    setSessions(prev => [...prev, { tempId: ++tempIdCounter, dayNumber: nextDay, name: t("plans.day", { number: nextDay }), exercises: [] }]);
   }
 
   function removeSession(tempId: number) {
@@ -148,8 +151,8 @@ export default function NewPlanPage() {
   }
 
   async function save() {
-    if (!name.trim()) { setError("Plan name is required."); return; }
-    if (sessions.length === 0) { setError("Add at least one session."); return; }
+    if (!name.trim()) { setError(t("plans.nameRequired")); return; }
+    if (sessions.length === 0) { setError(t("plans.sessionsRequired")); return; }
     setError("");
     setSaving(true);
     try {
@@ -183,7 +186,7 @@ export default function NewPlanPage() {
 
       router.push("/plans");
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("newWorkout.error"));
     } finally {
       setSaving(false);
     }
@@ -191,26 +194,26 @@ export default function NewPlanPage() {
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>New Plan</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("plans.newPlan")}</Title>
 
-      <Card header={<CardHeader titleText="Plan Details" />} style={{ marginBottom: "1rem" }}>
+      <Card header={<CardHeader titleText={t("plans.planDetails")} />} style={{ marginBottom: "1rem" }}>
         <FlexBox direction={FlexBoxDirection.Column} style={{ gap: "1rem", padding: "1rem" }}>
           <div>
-            <Label required>Name</Label>
-            <Input value={name} onInput={handleInput(setName)} placeholder="e.g. 4-Day Strength Program" style={{ width: "100%" }} />
+            <Label required>{t("newWorkout.name")}</Label>
+            <Input value={name} onInput={handleInput(setName)} placeholder={t("plans.namePlaceholder")} style={{ width: "100%" }} />
           </div>
           <div>
-            <Label>Description</Label>
-            <Input value={description} onInput={handleInput(setDescription)} placeholder="Brief description of this plan" style={{ width: "100%" }} />
+            <Label>{t("plans.description")}</Label>
+            <Input value={description} onInput={handleInput(setDescription)} placeholder={t("plans.descriptionPlaceholder")} style={{ width: "100%" }} />
           </div>
           <FlexBox style={{ gap: "2rem", alignItems: "center", flexWrap: "wrap" }}>
             <div>
-              <Label required>Duration (weeks)</Label>
+              <Label required>{t("plans.durationWeeks")}</Label>
               <Input value={weeksCount} onInput={handleInput(setWeeksCount)} type="Number" style={{ width: 100 }} />
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1.25rem" }}>
               <CheckBox checked={isPublic} onChange={(e) => setIsPublic(e.target.checked ?? false)} />
-              <Label>Make public (visible to all athletes)</Label>
+              <Label>{t("plans.makePublic")}</Label>
             </div>
           </FlexBox>
         </FlexBox>
@@ -221,15 +224,15 @@ export default function NewPlanPage() {
           key={session.tempId}
           header={
             <CardHeader
-              titleText={`Day ${session.dayNumber}`}
-              action={<Button design="Negative" onClick={() => removeSession(session.tempId)}>Remove</Button>}
+              titleText={t("plans.day", { number: session.dayNumber })}
+              action={<Button design="Negative" onClick={() => removeSession(session.tempId)}>{t("common.delete")}</Button>}
             />
           }
           style={{ marginBottom: "1rem" }}
         >
           <div style={{ padding: "1rem" }}>
             <div style={{ marginBottom: "1rem" }}>
-              <Label>Session Name</Label>
+              <Label>{t("plans.sessionName")}</Label>
               <Input
                 value={session.name}
                 onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSessionName(session.tempId, e.target.value ?? "")}
@@ -244,7 +247,7 @@ export default function NewPlanPage() {
                   <Button design="Transparent" onClick={() => removeExercise(session.tempId, exIdx)}>✕</Button>
                 </FlexBox>
                 <div style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.5rem", fontWeight: "bold", fontSize: "0.8rem" }}>
-                  <span>Set</span><span>Reps</span><span>Weight (kg)</span><span>Duration (s)</span><span />
+                  <span>{t("workoutDetail.set")}</span><span>{t("workoutDetail.reps")}</span><span>{t("workoutDetail.weight")}</span><span>{t("workoutDetail.duration")}</span><span />
                 </div>
                 {entry.sets.map(set => (
                   <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.4rem", alignItems: "center" }}>
@@ -255,41 +258,41 @@ export default function NewPlanPage() {
                     <Button design="Transparent" onClick={() => removeSet(session.tempId, exIdx, set.tempId)}>✕</Button>
                   </div>
                 ))}
-                <Button onClick={() => addSet(session.tempId, exIdx)} style={{ marginTop: "0.25rem" }}>Add Set</Button>
+                <Button onClick={() => addSet(session.tempId, exIdx)} style={{ marginTop: "0.25rem" }}>{t("newWorkout.addSet")}</Button>
               </div>
             ))}
 
-            <Button onClick={() => openExercisePicker(session.tempId)}>Add Exercise</Button>
+            <Button onClick={() => openExercisePicker(session.tempId)}>{t("newWorkout.addExercise")}</Button>
           </div>
         </Card>
       ))}
 
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginTop: "1rem" }}>
-        <Button onClick={addSession}>+ Add Day</Button>
+        <Button onClick={addSession}>{t("plans.addDay")}</Button>
         <FlexBox style={{ gap: "0.5rem", alignItems: "center" }}>
           {error && <Text style={{ color: "var(--sapNegativeTextColor)" }}>{error}</Text>}
-          <Button onClick={() => router.push("/plans")}>Cancel</Button>
-          <Button design="Emphasized" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Plan"}</Button>
+          <Button onClick={() => router.push("/plans")}>{t("common.cancel")}</Button>
+          <Button design="Emphasized" onClick={save} disabled={saving}>{saving ? t("plans.saving") : t("plans.savePlan")}</Button>
         </FlexBox>
       </FlexBox>
 
       {/* Exercise picker dialog */}
       <Dialog
         open={pickerOpen}
-        headerText={creating ? "New Exercise" : "Add Exercise"}
+        headerText={creating ? t("newWorkout.newExercise") : t("newWorkout.addExerciseTitle")}
         onClose={() => { setPickerOpen(false); setCreating(false); setSearch(""); }}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
             {creating ? (
               <>
-                <Button design="Transparent" onClick={() => setCreating(false)}>← Back</Button>
+                <Button design="Transparent" onClick={() => setCreating(false)}>{t("newWorkout.back")}</Button>
                 <Button design="Emphasized" onClick={createAndAddExercise} disabled={createSaving || !newExName.trim()}>
-                  {createSaving ? "Saving..." : "Save & Add"}
+                  {createSaving ? t("newWorkout.saving") : t("newWorkout.saveAdd")}
                 </Button>
               </>
             ) : (
-              <Button design="Transparent" onClick={() => { setPickerOpen(false); setSearch(""); }}>Cancel</Button>
+              <Button design="Transparent" onClick={() => { setPickerOpen(false); setSearch(""); }}>{t("common.cancel")}</Button>
             )}
           </div>
         }
@@ -297,36 +300,36 @@ export default function NewPlanPage() {
         {creating ? (
           <div style={{ padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <div>
-              <Label required>Name</Label>
+              <Label required>{t("newWorkout.name")}</Label>
               <Input value={newExName} onInput={(e: Ui5CustomEvent<InputDomRef>) => setNewExName(e.target.value ?? "")} style={{ width: "100%" }} placeholder="e.g. Bulgarian Split Squat" />
             </div>
             <div>
-              <Label required>Category</Label>
+              <Label required>{t("newWorkout.category")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExCategory(e.detail.selectedOption.value as string)}>
-                <Option value="strength" selected={newExCategory === "strength"}>Strength</Option>
-                <Option value="cardio" selected={newExCategory === "cardio"}>Cardio</Option>
-                <Option value="flexibility" selected={newExCategory === "flexibility"}>Flexibility</Option>
-                <Option value="other" selected={newExCategory === "other"}>Other</Option>
+                <Option value="strength" selected={newExCategory === "strength"}>{t("newWorkout.strength")}</Option>
+                <Option value="cardio" selected={newExCategory === "cardio"}>{t("newWorkout.cardio")}</Option>
+                <Option value="flexibility" selected={newExCategory === "flexibility"}>{t("newWorkout.flexibility")}</Option>
+                <Option value="other" selected={newExCategory === "other"}>{t("newWorkout.other")}</Option>
               </Select>
             </div>
             <div>
-              <Label>Muscle Group</Label>
+              <Label>{t("newWorkout.muscleGroup")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExMuscleGroup(e.detail.selectedOption.value as string)}>
-                <Option value="" selected={!newExMuscleGroup}>— None —</Option>
-                <Option value="chest">Chest</Option>
-                <Option value="back">Back</Option>
-                <Option value="legs">Legs</Option>
-                <Option value="shoulders">Shoulders</Option>
-                <Option value="arms">Arms</Option>
-                <Option value="core">Core</Option>
-                <Option value="full_body">Full Body</Option>
+                <Option value="" selected={!newExMuscleGroup}>{t("newWorkout.noneOption")}</Option>
+                <Option value="chest">{t("newWorkout.chest")}</Option>
+                <Option value="back">{t("newWorkout.back_muscle")}</Option>
+                <Option value="legs">{t("newWorkout.legs")}</Option>
+                <Option value="shoulders">{t("newWorkout.shoulders")}</Option>
+                <Option value="arms">{t("newWorkout.arms")}</Option>
+                <Option value="core">{t("newWorkout.core")}</Option>
+                <Option value="full_body">{t("newWorkout.fullBody")}</Option>
               </Select>
             </div>
           </div>
         ) : (
           <div style={{ padding: "0.75rem 1rem 0" }}>
             <Input
-              placeholder="Search exercises..."
+              placeholder={t("newWorkout.search")}
               value={search}
               onInput={handleInput(setSearch)}
               showClearIcon
@@ -346,9 +349,9 @@ export default function NewPlanPage() {
               </List>
             ) : (
               <div style={{ padding: "0.5rem 0 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <Text style={{ color: "var(--sapNeutralTextColor)" }}>No exercises found.</Text>
+                <Text style={{ color: "var(--sapNeutralTextColor)" }}>{t("newWorkout.noExercisesFound")}</Text>
                 <Button design="Default" onClick={() => { setNewExName(search); setCreating(true); }}>
-                  + Create &ldquo;{search || "new exercise"}&rdquo;
+                  {t("newWorkout.createExercise", { name: search || "new exercise" })}
                 </Button>
               </div>
             )}

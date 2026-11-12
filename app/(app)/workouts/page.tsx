@@ -1,8 +1,9 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { getDb } from "@/db";
-import { workouts, workoutExercises } from "@/db/schema";
-import { eq, desc, count } from "drizzle-orm";
 import { EmptyState } from "@/components/EmptyState";
 import { DeleteButton } from "@/components/DeleteButton";
 import "@ui5/webcomponents-icons/dist/copy.js";
@@ -16,59 +17,76 @@ import {
   Title,
 } from "@ui5/webcomponents-react";
 
-export default async function WorkoutsPage() {
-  const session = await auth();
-  const userId = session!.user!.id!;
+type Workout = { id: number; name: string; date: string; notes: string | null; exerciseCount: number };
 
-  const rows = await getDb()
-    .select({
-      id: workouts.id,
-      name: workouts.name,
-      date: workouts.date,
-      notes: workouts.notes,
-      exerciseCount: count(workoutExercises.id),
-    })
-    .from(workouts)
-    .leftJoin(workoutExercises, eq(workoutExercises.workoutId, workouts.id))
-    .where(eq(workouts.userId, userId))
-    .groupBy(workouts.id)
-    .orderBy(desc(workouts.date));
+export default function WorkoutsPage() {
+  const { t } = useTranslation();
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/workouts")
+      .then(r => r.json())
+      .then(data => {
+        setWorkouts(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const sessionLabel = t("workouts.sessions_one", { count: workouts.length });
+  const sessionLabelPlural = t("workouts.sessions_other", { count: workouts.length });
+  const sessionsText = workouts.length === 1 ? sessionLabel : sessionLabelPlural;
+
+  if (loading) {
+    return (
+      <div>
+        <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("workouts.title")}</Title>
+        <Card header={<CardHeader titleText={t("common.loading")} />} />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>Workout History</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("workouts.title")}</Title>
 
-      <Card header={<CardHeader titleText={`${rows.length} session${rows.length !== 1 ? "s" : ""}`} />}>
-        {rows.length === 0 ? (
+      <Card header={<CardHeader titleText={sessionsText} />}>
+        {workouts.length === 0 ? (
           <EmptyState
             name="NoActivities"
-            titleText="No workouts logged yet"
-            subtitleText="Complete a day in one of your plans to log a workout"
+            titleText={t("workouts.noWorkouts")}
+            subtitleText={t("workouts.noWorkoutsSubtitle")}
           />
         ) : (
           <List>
-            {rows.map((w) => (
-              <ListItemCustom key={w.id} style={{ padding: "0.5rem 1rem" }}>
-                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <Link href={`/workouts/${w.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: "var(--sapTextColor)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {w.name}
-                    </div>
-                    <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", marginTop: 2 }}>
-                      {new Date(w.date).toLocaleDateString()} · {w.exerciseCount} exercise{w.exerciseCount !== 1 ? "s" : ""}
-                    </div>
-                  </Link>
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0, marginLeft: "1rem" }}>
-                    <Link href={`/workouts/new?cloneId=${w.id}`}>
-                      <Button design="Transparent" tooltip="Clone workout">
-                        <Icon name="copy" />
-                      </Button>
+            {workouts.map((w) => {
+              const exLabel = w.exerciseCount === 1
+                ? t("workouts.exercises_one", { count: w.exerciseCount })
+                : t("workouts.exercises_other", { count: w.exerciseCount });
+              return (
+                <ListItemCustom key={w.id} style={{ padding: "0.5rem 1rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                    <Link href={`/workouts/${w.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: "var(--sapTextColor)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {w.name}
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", marginTop: 2 }}>
+                        {new Date(w.date).toLocaleDateString()} · {exLabel}
+                      </div>
                     </Link>
-                    <DeleteButton url={`/api/workouts/${w.id}`} label="Remove" />
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0, marginLeft: "1rem" }}>
+                      <Link href={`/workouts/new?cloneId=${w.id}`}>
+                        <Button design="Transparent" tooltip={t("workouts.cloneTooltip")}>
+                          <Icon name="copy" />
+                        </Button>
+                      </Link>
+                      <DeleteButton url={`/api/workouts/${w.id}`} label={t("workouts.remove")} />
+                    </div>
                   </div>
-                </div>
-              </ListItemCustom>
-            ))}
+                </ListItemCustom>
+              );
+            })}
           </List>
         )}
       </Card>
