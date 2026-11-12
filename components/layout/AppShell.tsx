@@ -15,13 +15,16 @@ import "@ui5/webcomponents-icons/dist/manager.js";
 import "@ui5/webcomponents-icons/dist/group.js";
 import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
+import "@ui5/webcomponents-icons/dist/lightbulb.js";
+import "@ui5/webcomponents-icons/dist/weather-proofing.js";
+import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
 import {
   Avatar,
   Button,
-  Icon,
   ShellBar,
   SideNavigation,
   SideNavigationItem,
+  ToggleButton,
 } from "@ui5/webcomponents-react";
 import type { ReactNode } from "react";
 
@@ -53,6 +56,7 @@ export function AppShell({
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [isMobile, setIsMobile] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { role } = useRole();
 
@@ -103,16 +107,38 @@ export function AppShell({
     if (isMobile) setNavOpen(false);
   }
 
+  async function toggleTheme() {
+    const next = isDark ? "sap_horizon" : "sap_horizon_dark";
+    await setTheme(next);
+    setIsDark(d => !d);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <ShellBar
         primaryTitle="MakeUFit"
         onLogoClick={() => router.push("/dashboard")}
         style={{ flexShrink: 0 }}
-        logo={<Icon name="physical-activity" style={{ width: 28, height: 28, color: "#fff", cursor: "pointer" }} />}
+        logo={
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z'/%3E%3C/svg%3E"
+            alt="MakeUFit"
+            style={{ width: 28, height: 28 }}
+          />
+        }
         startButton={isMobile
           ? <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
           : undefined
+        }
+        content={
+          <ToggleButton
+            design="Transparent"
+            icon={isDark ? "lightbulb" : "weather-proofing"}
+            pressed={isDark}
+            onClick={toggleTheme}
+            tooltip={isDark ? "Switch to Light" : "Switch to Dark"}
+          />
         }
         profile={
           <Avatar
