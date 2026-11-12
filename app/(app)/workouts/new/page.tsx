@@ -255,8 +255,8 @@ export default function NewWorkoutPage() {
     <div>
       <Title level="H2" style={{ marginBottom: "1.5rem" }}>New Workout</Title>
 
-      <Card header={<CardHeader titleText="Workout Details" />} style={{ marginBottom: "1rem" }}>
-        <FlexBox direction={FlexBoxDirection.Column} style={{ gap: "1rem", padding: "1rem" }}>
+      <Card style={{ marginBottom: "1rem" }}>
+        <div style={{ padding: "1rem 1.25rem", display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "1rem", alignItems: "end" }}>
           <div>
             <Label required>Name</Label>
             <Input value={name} onInput={handleInput(setName)} placeholder="e.g. Push Day" style={{ width: "100%" }} />
@@ -272,7 +272,7 @@ export default function NewWorkoutPage() {
             <Label>Notes</Label>
             <Input value={notes} onInput={handleInput(setNotes)} placeholder="Optional notes" style={{ width: "100%" }} />
           </div>
-        </FlexBox>
+        </div>
       </Card>
 
       {exerciseEntries.map((entry, exIdx) => (
