@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DeleteButton } from "@/components/DeleteButton";
-import "@ui5/webcomponents-icons/dist/arrow-left.js";
+import "@ui5/webcomponents-icons/dist/nav-back.js";
 import {
   Button,
   Card,
@@ -59,7 +59,7 @@ export default async function WorkoutDetailPage({ params }: { params: { id: stri
   return (
     <div>
       <Link href="/workouts" style={{ textDecoration: "none" }}>
-        <Button design="Transparent" icon="arrow-left" style={{ marginBottom: "1rem" }} />
+        <Button design="Transparent" icon="nav-back" style={{ marginBottom: "1rem" }} />
       </Link>
 
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>

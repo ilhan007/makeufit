@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import "@ui5/webcomponents-icons/dist/nav-back.js";
 import {
   Button,
   Card,
@@ -166,7 +167,7 @@ export default function PlanDetailPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.25rem" }}>
             <Link href="/plans">
-              <Button design="Transparent" icon="arrow-left" />
+              <Button design="Transparent" icon="nav-back" />
             </Link>
             <Title level="H2">{plan.name}</Title>
             {plan.isPublic && <Tag design="Set2" colorScheme="8">Public</Tag>}
