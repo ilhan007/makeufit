@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import type { Ui5CustomEvent } from "@ui5/webcomponents-react";
 import type { InputDomRef, DatePickerDomRef } from "@ui5/webcomponents-react";
 import type { DatePickerChangeEventDetail } from "@ui5/webcomponents/dist/DatePicker.js";
@@ -62,6 +64,7 @@ const CHIP_COLORS = [
 ];
 
 export default function MetricsPage() {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [weightKg, setWeightKg] = useState("");
@@ -143,37 +146,37 @@ export default function MetricsPage() {
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>Metrics</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("metrics.title")}</Title>
 
-      <Card header={<CardHeader titleText="Log Entry" />} style={{ marginBottom: "1.5rem" }}>
+      <Card header={<CardHeader titleText={t("metrics.logEntry")} />} style={{ marginBottom: "1.5rem" }}>
         <FlexBox direction={FlexBoxDirection.Column} style={{ gap: "0.75rem", padding: "1rem" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.75rem" }}>
             <div>
-              <Label required>Date</Label>
+              <Label required>{t("metrics.date")}</Label>
               <DatePicker
                 value={date}
                 onChange={(e: Ui5CustomEvent<DatePickerDomRef, DatePickerChangeEventDetail>) => setDate(e.target.value ?? date)}
               />
             </div>
-            <div><Label>Weight (kg)</Label><Input value={weightKg} onInput={handleInput(setWeightKg)} placeholder="e.g. 75.5" /></div>
-            <div><Label>Body Fat %</Label><Input value={bodyFatPct} onInput={handleInput(setBodyFatPct)} placeholder="e.g. 18" /></div>
-            <div><Label>Waist (cm)</Label><Input value={waistCm} onInput={handleInput(setWaistCm)} /></div>
+            <div><Label>{t("metrics.weight")}</Label><Input value={weightKg} onInput={handleInput(setWeightKg)} placeholder="e.g. 75.5" /></div>
+            <div><Label>{t("metrics.bodyFat")}</Label><Input value={bodyFatPct} onInput={handleInput(setBodyFatPct)} placeholder="e.g. 18" /></div>
+            <div><Label>{t("metrics.waist")}</Label><Input value={waistCm} onInput={handleInput(setWaistCm)} /></div>
           </div>
           <FlexBox justifyContent={FlexBoxJustifyContent.End} style={{ gap: "0.5rem" }}>
             {error && <Text style={{ color: "var(--sapNegativeTextColor)", alignSelf: "center" }}>{error}</Text>}
-            <Button design="Emphasized" onClick={save} disabled={saving}>{saving ? "Saving..." : "Log Entry"}</Button>
+            <Button design="Emphasized" onClick={save} disabled={saving}>{saving ? t("metrics.saving") : t("metrics.logEntryBtn")}</Button>
           </FlexBox>
         </FlexBox>
       </Card>
 
-      <Card header={<CardHeader titleText="History" />} style={{ marginBottom: "2rem" }}>
+      <Card header={<CardHeader titleText={t("metrics.history")} />} style={{ marginBottom: "2rem" }}>
         <Table
           headerRow={
             <TableHeaderRow>
-              <TableHeaderCell>Date</TableHeaderCell>
-              <TableHeaderCell>Weight</TableHeaderCell>
-              <TableHeaderCell>Body Fat %</TableHeaderCell>
-              <TableHeaderCell>Waist</TableHeaderCell>
+              <TableHeaderCell>{t("metrics.date")}</TableHeaderCell>
+              <TableHeaderCell>{t("metrics.weightCol")}</TableHeaderCell>
+              <TableHeaderCell>{t("metrics.bodyFatCol")}</TableHeaderCell>
+              <TableHeaderCell>{t("metrics.waistCol")}</TableHeaderCell>
               <TableHeaderCell></TableHeaderCell>
             </TableHeaderRow>
           }
@@ -181,22 +184,22 @@ export default function MetricsPage() {
           {metrics.map(m => (
             <TableRow key={m.id}>
               <TableCell>{new Date(m.date).toLocaleDateString()}</TableCell>
-              <TableCell>{m.weightKg ? `${m.weightKg} kg` : "—"}</TableCell>
+              <TableCell>{m.weightKg ? `${m.weightKg} ${t("metrics.weightUnit")}` : "—"}</TableCell>
               <TableCell>{m.bodyFatPct ? `${m.bodyFatPct}%` : "—"}</TableCell>
               <TableCell>{m.waistCm ? `${m.waistCm} cm` : "—"}</TableCell>
               <TableCell>
-                <Button design="Negative" onClick={() => deleteMetric(m.id)}>Delete</Button>
+                <Button design="Negative" onClick={() => deleteMetric(m.id)}>{t("metrics.delete")}</Button>
               </TableCell>
             </TableRow>
           ))}
         </Table>
       </Card>
 
-      <Title level="H3" style={{ marginBottom: "1rem" }}>Progress</Title>
+      <Title level="H3" style={{ marginBottom: "1rem" }}>{t("metrics.progress")}</Title>
 
-      <Card header={<CardHeader titleText="Body Weight Over Time" />} style={{ marginBottom: "1.5rem" }}>
+      <Card header={<CardHeader titleText={t("metrics.bodyWeightChart")} />} style={{ marginBottom: "1.5rem" }}>
         {!progressData || progressData.weightData.length === 0 ? (
-          <div style={{ padding: "1rem" }}><Text>No weight data yet. Log your first entry above!</Text></div>
+          <div style={{ padding: "1rem" }}><Text>{t("metrics.noWeightData")}</Text></div>
         ) : (
           <div style={{ padding: "1rem" }}>
             <ResponsiveContainer width="100%" height={300}>
@@ -204,7 +207,7 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis domain={["auto", "auto"]} unit=" kg" tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v) => [`${v} kg`, "Weight"]} />
+                <Tooltip formatter={(v) => [`${v} ${t("metrics.weightUnit")}`, "Weight"]} />
                 <Line type="monotone" dataKey="weight" stroke="var(--sapChart_OrderedColor_1, #5899DA)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -214,17 +217,17 @@ export default function MetricsPage() {
 
       <Card header={
         <CardHeader
-          titleText="Exercise Progress (Max Weight)"
+          titleText={t("metrics.exerciseProgress")}
           action={
             <Button design="Default" onClick={() => setExDialogOpen(true)}>
-              {trackedIds.length === 0 ? "Choose Exercises" : "Edit Exercises"}
+              {trackedIds.length === 0 ? t("metrics.chooseExercises") : t("metrics.editExercises")}
             </Button>
           }
         />
       }>
         <FlexBox direction={FlexBoxDirection.Column} style={{ padding: "1rem", gap: "1rem" }}>
           {trackedIds.length === 0 ? (
-            <Text style={{ color: "var(--sapNeutralTextColor)" }}>Select exercises to track their progress over time.</Text>
+            <Text style={{ color: "var(--sapNeutralTextColor)" }}>{t("metrics.selectExercises")}</Text>
           ) : (
             <>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -248,14 +251,14 @@ export default function MetricsPage() {
                 })}
               </div>
               {activeData.length === 0 ? (
-                <Text style={{ color: "var(--sapNeutralTextColor)" }}>No data for this exercise yet.</Text>
+                <Text style={{ color: "var(--sapNeutralTextColor)" }}>{t("metrics.noExerciseData")}</Text>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={activeData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                     <YAxis domain={["auto", "auto"]} unit=" kg" tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v) => [`${v} kg`, "Max Weight"]} />
+                    <Tooltip formatter={(v) => [`${v} ${t("metrics.weightUnit")}`, t("metrics.maxWeight")]} />
                     <Line type="monotone" dataKey="maxWeight" stroke={activeColor} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -267,18 +270,18 @@ export default function MetricsPage() {
 
       <Dialog
         open={exDialogOpen}
-        headerText="Track Exercises"
+        headerText={t("metrics.trackExercises")}
         onClose={() => setExDialogOpen(false)}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
-            <Button design="Emphasized" onClick={() => setExDialogOpen(false)}>Done</Button>
+            <Button design="Emphasized" onClick={() => setExDialogOpen(false)}>{t("metrics.done")}</Button>
           </div>
         }
       >
         <div style={{ padding: "0.75rem 1rem 0" }}>
           <Input
-            placeholder="Search exercises..."
+            placeholder={t("metrics.searchExercises")}
             value={exSearch}
             onInput={(e: Ui5CustomEvent<InputDomRef>) => setExSearch(e.target.value ?? "")}
             showClearIcon

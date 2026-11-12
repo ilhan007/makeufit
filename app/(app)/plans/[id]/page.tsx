@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import "@ui5/webcomponents-icons/dist/nav-back.js";
 import {
   Button,
@@ -58,6 +60,7 @@ type Plan = {
 export default function PlanDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [userId, setUserId] = useState<string>("");
   const [isFollowing, setIsFollowing] = useState(false);
@@ -162,7 +165,7 @@ export default function PlanDetailPage() {
     }
   }
 
-  if (!plan) return <div style={{ padding: "2rem" }}>Loading...</div>;
+  if (!plan) return <div style={{ padding: "2rem" }}>{t("common.loading")}</div>;
 
   const isOwner = plan.authorId === userId;
   const isPublicNotOwner = !isOwner && plan.isPublic;
@@ -186,12 +189,12 @@ export default function PlanDetailPage() {
         <FlexBox style={{ gap: "0.5rem", marginTop: "0.25rem" }}>
           {isOwner && (
             <Link href={`/plans/${plan.id}/edit`}>
-              <Button>Edit</Button>
+              <Button>{t("plans.edit")}</Button>
             </Link>
           )}
           {isPublicNotOwner && (
             <Button design={isFollowing ? "Default" : "Emphasized"} onClick={useThisPlan} disabled={using || used || isFollowing}>
-              {isFollowing ? "Following" : used ? "Added to My Plans!" : using ? "Adding..." : "Use This Plan"}
+              {isFollowing ? t("plans.alreadyFollowing") : used ? t("plans.addedPlan") : using ? t("plans.addingPlan") : t("plans.useThisPlan")}
             </Button>
           )}
         </FlexBox>
@@ -201,11 +204,11 @@ export default function PlanDetailPage() {
         {plan.sessions.length === 0 ? (
           <Card>
             <div style={{ padding: "2rem", textAlign: "center", color: "var(--sapNeutralTextColor)" }}>
-              No sessions yet.
+              {t("plans.noSessions")}
               {isOwner && (
                 <div style={{ marginTop: "1rem" }}>
                   <Link href={`/plans/${plan.id}/edit`}>
-                    <Button design="Emphasized">Add Sessions</Button>
+                    <Button design="Emphasized">{t("plans.addSessions")}</Button>
                   </Link>
                 </div>
               )}
@@ -220,7 +223,7 @@ export default function PlanDetailPage() {
                 header={
                   <CardHeader
                     titleText={session.name}
-                    subtitleText={`Day ${session.dayNumber}${session.notes ? ` · ${session.notes}` : ""}`}
+                    subtitleText={`${t("plans.day", { number: session.dayNumber })}${session.notes ? ` · ${session.notes}` : ""}`}
                     action={
                       isOwner && (
                         <Button
@@ -228,7 +231,7 @@ export default function PlanDetailPage() {
                           onClick={() => completeWorkout(session)}
                           disabled={completing === session.id}
                         >
-                          {completing === session.id ? "Saving..." : "Complete Workout"}
+                          {completing === session.id ? t("plans.saving") : t("plans.completeWorkout")}
                         </Button>
                       )
                     }
@@ -252,10 +255,10 @@ export default function PlanDetailPage() {
                           <div style={{ paddingLeft: "0.75rem" }}>
                             {/* Header */}
                             <div style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.35rem" }}>
-                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Set</span>
-                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Reps</span>
-                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Weight (kg)</span>
-                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>Duration (s)</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{t("workoutDetail.set")}</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{t("workoutDetail.reps")}</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{t("workoutDetail.weight")}</span>
+                              <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{t("workoutDetail.duration")}</span>
                             </div>
                             {ex.sets.map(set => (
                               <div key={set.setNumber} style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr", gap: "0.5rem", marginBottom: "0.35rem", alignItems: "center" }}>
@@ -301,10 +304,10 @@ export default function PlanDetailPage() {
       {isOwner && plan.sessions.length > 0 && (
         <div style={{ marginTop: "0.5rem", display: "flex", justifyContent: "flex-end" }}>
           <Button design="Negative" onClick={async () => {
-            if (!confirm("Delete this plan?")) return;
+            if (!confirm(t("plans.confirmDelete"))) return;
             await fetch(`/api/plans/${plan.id}`, { method: "DELETE" });
             router.push("/plans");
-          }}>Delete Plan</Button>
+          }}>{t("plans.deletePlan")}</Button>
         </div>
       )}
     </div>

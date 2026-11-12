@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import type { Ui5CustomEvent } from "@ui5/webcomponents-react";
 import type { InputDomRef, DatePickerDomRef } from "@ui5/webcomponents-react";
 import type { DatePickerChangeEventDetail } from "@ui5/webcomponents/dist/DatePicker.js";
@@ -50,6 +52,7 @@ export default function NewWorkoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cloneId = searchParams.get("cloneId");
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [date, setDate] = useState(new Date().toLocaleDateString("en-CA")); // yyyy-MM-dd
@@ -214,7 +217,7 @@ export default function NewWorkoutPage() {
   }
 
   async function save() {
-    if (!name.trim()) { setError("Workout name is required."); return; }
+    if (!name.trim()) { setError(t("newWorkout.nameRequired")); return; }
     setError("");
     setSaving(true);
     try {
@@ -244,7 +247,7 @@ export default function NewWorkoutPage() {
       }
       router.push("/workouts");
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("newWorkout.error"));
     } finally {
       setSaving(false);
     }
@@ -252,24 +255,24 @@ export default function NewWorkoutPage() {
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>New Workout</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("newWorkout.title")}</Title>
 
       <Card style={{ marginBottom: "1rem" }}>
         <div style={{ padding: "1rem 1.25rem", display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "1rem", alignItems: "end" }}>
           <div>
-            <Label required>Name</Label>
-            <Input value={name} onInput={handleInput(setName)} placeholder="e.g. Push Day" style={{ width: "100%" }} />
+            <Label required>{t("newWorkout.name")}</Label>
+            <Input value={name} onInput={handleInput(setName)} placeholder={t("newWorkout.namePlaceholder")} style={{ width: "100%" }} />
           </div>
           <div>
-            <Label required>Date</Label>
+            <Label required>{t("newWorkout.date")}</Label>
             <DatePicker
               value={date}
               onChange={(e: Ui5CustomEvent<DatePickerDomRef, DatePickerChangeEventDetail>) => setDate(e.target.value ?? date)}
             />
           </div>
           <div>
-            <Label>Notes</Label>
-            <Input value={notes} onInput={handleInput(setNotes)} placeholder="Optional notes" style={{ width: "100%" }} />
+            <Label>{t("newWorkout.notes")}</Label>
+            <Input value={notes} onInput={handleInput(setNotes)} placeholder={t("newWorkout.notesPlaceholder")} style={{ width: "100%" }} />
           </div>
         </div>
       </Card>
@@ -281,14 +284,14 @@ export default function NewWorkoutPage() {
             <CardHeader
               titleText={entry.exercise.name}
               subtitleText={entry.exercise.muscleGroup ?? entry.exercise.category}
-              action={<Button design="Negative" onClick={() => removeExercise(exIdx)}>Remove</Button>}
+              action={<Button design="Negative" onClick={() => removeExercise(exIdx)}>{t("newWorkout.remove")}</Button>}
             />
           }
           style={{ marginBottom: "1rem" }}
         >
           <div style={{ padding: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.5rem", fontWeight: "bold", fontSize: "0.875rem" }}>
-              <span>Set</span><span>Reps</span><span>Weight (kg)</span><span>Duration (s)</span><span />
+              <span>{t("newWorkout.set")}</span><span>{t("newWorkout.reps")}</span><span>{t("newWorkout.weight")}</span><span>{t("newWorkout.duration")}</span><span />
             </div>
             {entry.sets.map((set) => (
               <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
@@ -299,40 +302,40 @@ export default function NewWorkoutPage() {
                 <Button design="Transparent" onClick={() => removeSet(exIdx, set.tempId)}>✕</Button>
               </div>
             ))}
-            <Button onClick={() => addSet(exIdx)} style={{ marginTop: "0.5rem" }}>Add Set</Button>
+            <Button onClick={() => addSet(exIdx)} style={{ marginTop: "0.5rem" }}>{t("newWorkout.addSet")}</Button>
           </div>
         </Card>
       ))}
 
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginTop: "1rem" }}>
         <FlexBox style={{ gap: "0.5rem" }}>
-          <Button onClick={() => setDialogOpen(true)}>Add Exercise</Button>
-          <Button design="Default" onClick={openPlanDialog}>From Plan</Button>
+          <Button onClick={() => setDialogOpen(true)}>{t("newWorkout.addExercise")}</Button>
+          <Button design="Default" onClick={openPlanDialog}>{t("newWorkout.fromPlan")}</Button>
         </FlexBox>
         <FlexBox style={{ gap: "0.5rem" }}>
           {error && <Text style={{ color: "var(--sapNegativeTextColor)", alignSelf: "center" }}>{error}</Text>}
           <Button design="Emphasized" onClick={save} disabled={saving}>
-            {saving ? "Saving..." : "Save Workout"}
+            {saving ? t("newWorkout.saving") : t("newWorkout.save")}
           </Button>
         </FlexBox>
       </FlexBox>
 
       <Dialog
         open={dialogOpen}
-        headerText={creating ? "New Exercise" : "Add Exercise"}
+        headerText={creating ? t("newWorkout.newExercise") : t("newWorkout.addExerciseTitle")}
         onClose={() => { setDialogOpen(false); setCreating(false); setSearch(""); }}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
             {creating ? (
               <>
-                <Button design="Transparent" onClick={() => setCreating(false)}>← Back</Button>
+                <Button design="Transparent" onClick={() => setCreating(false)}>{t("newWorkout.back")}</Button>
                 <Button design="Emphasized" onClick={createAndAdd} disabled={createSaving || !newExName.trim()}>
-                  {createSaving ? "Saving..." : "Save & Add"}
+                  {createSaving ? t("newWorkout.saving") : t("newWorkout.saveAdd")}
                 </Button>
               </>
             ) : (
-              <Button design="Transparent" onClick={() => { setDialogOpen(false); setSearch(""); }}>Cancel</Button>
+              <Button design="Transparent" onClick={() => { setDialogOpen(false); setSearch(""); }}>{t("newWorkout.cancel")}</Button>
             )}
           </div>
         }

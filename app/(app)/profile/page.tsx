@@ -3,17 +3,14 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRole } from "@/components/layout/RoleContext";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import { Button, Card, CardHeader, Label, Text, Title } from "@ui5/webcomponents-react";
 
 type Role = "athlete" | "coach" | "both";
 
-const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "athlete", label: "Athlete", description: "Track your own workouts & metrics" },
-  { value: "coach", label: "Coach", description: "Manage athletes & assign workouts" },
-  { value: "both", label: "Both", description: "Train yourself and coach others" },
-];
-
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const userName = session?.user?.name;
   const userImage = session?.user?.image;
@@ -25,11 +22,16 @@ export default function ProfilePage() {
   const [bioSaved, setBioSaved] = useState(false);
   const [bioLoaded, setBioLoaded] = useState(false);
 
-  // Load bio once
   if (!bioLoaded) {
     setBioLoaded(true);
     fetch("/api/user/bio").then(r => r.json()).then(d => { if (d.bio != null) setBio(d.bio); });
   }
+
+  const ROLES: { value: Role; label: string; description: string }[] = [
+    { value: "athlete", label: t("profile.athlete"), description: t("profile.athleteDesc") },
+    { value: "coach", label: t("profile.coach"), description: t("profile.coachDesc") },
+    { value: "both", label: t("profile.both"), description: t("profile.bothDesc") },
+  ];
 
   async function selectRole(newRole: Role) {
     if (newRole === role || roleSaving) return;
@@ -57,9 +59,8 @@ export default function ProfilePage() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>Profile</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("profile.title")}</Title>
 
-      {/* Identity */}
       <Card style={{ marginBottom: "1.5rem" }}>
         <div style={{ padding: "1.25rem", display: "flex", alignItems: "center", gap: "1rem" }}>
           {userImage && (
@@ -73,10 +74,9 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* Role */}
-      <Card header={<CardHeader titleText="Profile Type" subtitleText="How do you use MakeUFit?" />} style={{ marginBottom: "1.5rem" }}>
+      <Card header={<CardHeader titleText={t("profile.profileType")} subtitleText={t("profile.profileTypeSubtitle")} />} style={{ marginBottom: "1.5rem" }}>
         <div style={{ padding: "1rem" }}>
-          <Label style={{ display: "block", marginBottom: "0.75rem" }}>I am a...</Label>
+          <Label style={{ display: "block", marginBottom: "0.75rem" }}>{t("profile.iAmA")}</Label>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             {ROLES.map(({ value, label, description }) => {
               const isActive = role === value;
@@ -108,12 +108,12 @@ export default function ProfilePage() {
 
           {(role === "coach" || role === "both") && (
             <div style={{ marginTop: "1.25rem" }}>
-              <Label style={{ display: "block", marginBottom: "0.5rem" }}>Coach Bio</Label>
+              <Label style={{ display: "block", marginBottom: "0.5rem" }}>{t("profile.coachBio")}</Label>
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
                 maxLength={500}
-                placeholder="Tell athletes about your coaching style and specialities..."
+                placeholder={t("profile.bioPlaceholder")}
                 rows={3}
                 style={{
                   width: "100%", boxSizing: "border-box",
@@ -125,8 +125,10 @@ export default function ProfilePage() {
                 }}
               />
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.5rem" }}>
-                <Button onClick={saveBio} disabled={bioSaving}>{bioSaving ? "Saving..." : "Save Bio"}</Button>
-                {bioSaved && <Text style={{ color: "var(--sapPositiveTextColor)", fontSize: "0.875rem" }}>Saved!</Text>}
+                <Button onClick={saveBio} disabled={bioSaving}>
+                  {bioSaving ? t("profile.saving") : t("profile.saveBio")}
+                </Button>
+                {bioSaved && <Text style={{ color: "var(--sapPositiveTextColor)", fontSize: "0.875rem" }}>{t("profile.saved")}</Text>}
                 <Text style={{ marginLeft: "auto", fontSize: "0.75rem", color: "var(--sapNeutralTextColor)" }}>{bio.length}/500</Text>
               </div>
             </div>

@@ -1,8 +1,9 @@
-import { auth } from "@/lib/auth";
-import { getDb } from "@/db";
-import { coachRelationships, users, workouts } from "@/db/schema";
-import { and, eq, desc, count } from "drizzle-orm";
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import { EmptyState } from "@/components/EmptyState";
 import { AcceptRequestButton } from "@/components/coach/AcceptRequestButton";
 import {
@@ -17,68 +18,53 @@ import {
   Title,
 } from "@ui5/webcomponents-react";
 
-export default async function AthletesPage() {
-  const session = await auth();
-  const userId = session!.user!.id!;
+type PendingRequest = {
+  id: number;
+  athleteName: string | null;
+  athleteEmail: string;
+  athleteImage: string | null;
+  athleteId: string;
+};
 
-  const [pendingRequests, acceptedAthletes] = await Promise.all([
-    getDb().select({
-      id: coachRelationships.id,
-      athleteName: users.name,
-      athleteEmail: users.email,
-      athleteImage: users.image,
-      athleteId: users.id,
-      createdAt: coachRelationships.createdAt,
-    })
-      .from(coachRelationships)
-      .innerJoin(users, eq(users.id, coachRelationships.athleteId))
-      .where(and(eq(coachRelationships.coachId, userId), eq(coachRelationships.status, "pending"))),
+type Athlete = {
+  relationshipId: number;
+  athleteId: string;
+  athleteName: string | null;
+  athleteEmail: string;
+  athleteImage: string | null;
+  lastWorkout: { date: string; name: string } | null;
+  totalWorkouts?: number;
+};
 
-    getDb().select({
-      relationshipId: coachRelationships.id,
-      athleteId: users.id,
-      athleteName: users.name,
-      athleteEmail: users.email,
-      athleteImage: users.image,
-    })
-      .from(coachRelationships)
-      .innerJoin(users, eq(users.id, coachRelationships.athleteId))
-      .where(and(eq(coachRelationships.coachId, userId), eq(coachRelationships.status, "accepted"))),
-  ]);
+const initials = (name: string | null) =>
+  name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
-  const athletesWithStats = await Promise.all(
-    acceptedAthletes.map(async (a) => {
-      const [lastWorkout, [wCount]] = await Promise.all([
-        getDb().select({ date: workouts.date, name: workouts.name })
-          .from(workouts)
-          .where(eq(workouts.userId, a.athleteId))
-          .orderBy(desc(workouts.date))
-          .limit(1),
-        getDb().select({ count: count() }).from(workouts).where(eq(workouts.userId, a.athleteId)),
-      ]);
-      return { ...a, lastWorkout: lastWorkout[0] ?? null, totalWorkouts: wCount.count };
-    })
-  );
+export default function AthletesPage() {
+  const { t } = useTranslation();
+  const [pending, setPending] = useState<PendingRequest[]>([]);
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
 
-  const initials = (name: string | null) =>
-    name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
+  useEffect(() => {
+    fetch("/api/coach/athletes/pending").then(r => r.json()).then(d => setPending(Array.isArray(d) ? d : []));
+    fetch("/api/coach/athletes").then(r => r.json()).then(d => setAthletes(Array.isArray(d) ? d : []));
+  }, []);
 
   return (
     <div>
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
-        <Title level="H2">Athletes</Title>
+        <Title level="H2">{t("athletes.title")}</Title>
         <Link href="/plans">
-          <Button design="Default">Manage Plans</Button>
+          <Button design="Default">{t("athletes.managePlans")}</Button>
         </Link>
       </FlexBox>
 
-      {pendingRequests.length > 0 && (
+      {pending.length > 0 && (
         <Card
-          header={<CardHeader titleText="Pending Requests" subtitleText={`${pendingRequests.length} waiting`} />}
+          header={<CardHeader titleText={t("athletes.pending")} subtitleText={t("athletes.waiting_other", { count: pending.length })} />}
           style={{ marginBottom: "1.5rem" }}
         >
           <div style={{ padding: "0.5rem 1rem 1rem" }}>
-            {pendingRequests.map(r => (
+            {pending.map(r => (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: "1rem",
                 padding: "0.75rem", marginBottom: "0.5rem",
@@ -100,12 +86,12 @@ export default async function AthletesPage() {
         </Card>
       )}
 
-      <Card header={<CardHeader titleText="My Athletes" subtitleText={`${athletesWithStats.length} active`} />}>
-        {athletesWithStats.length === 0 ? (
-          <EmptyState name="NoEntries" titleText="No athletes yet" subtitleText="Athletes appear here once they send you a request and you accept" />
+      <Card header={<CardHeader titleText={t("athletes.active")} subtitleText={t("athletes.activeCount_other", { count: athletes.length })} />}>
+        {athletes.length === 0 ? (
+          <EmptyState name="NoEntries" titleText={t("athletes.noAthletes")} subtitleText={t("athletes.noAthletesSubtitle")} />
         ) : (
           <div style={{ padding: "0.5rem 1rem 1rem" }}>
-            {athletesWithStats.map(a => (
+            {athletes.map(a => (
               <Link key={a.athleteId} href={`/athletes/${a.athleteId}`} style={{ textDecoration: "none" }}>
                 <div style={{
                   display: "flex", alignItems: "center", gap: "1rem",
@@ -120,11 +106,10 @@ export default async function AthletesPage() {
                   <div style={{ flex: 1 }}>
                     <Text style={{ fontWeight: 600, display: "block" }}>{a.athleteName ?? a.athleteEmail}</Text>
                     <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.875rem" }}>
-                      {a.totalWorkouts} workout{a.totalWorkouts !== 1 ? "s" : ""}
-                      {a.lastWorkout ? ` · Last: ${new Date(a.lastWorkout.date).toLocaleDateString()}` : ""}
+                      {a.lastWorkout ? t("athletes.lastWorkout", { date: new Date(a.lastWorkout.date).toLocaleDateString() }) : ""}
                     </Text>
                   </div>
-                  <Tag design="Set2" colorScheme="8">Active</Tag>
+                  <Tag design="Set2" colorScheme="8">{t("athletes.activeTag")}</Tag>
                 </div>
               </Link>
             ))}

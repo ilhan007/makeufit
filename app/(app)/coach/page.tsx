@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import {
   Avatar,
   Button,
@@ -44,6 +46,7 @@ type CoachCandidate = {
 };
 
 export default function CoachPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [relationships, setRelationships] = useState<CoachRelationship[]>([]);
   const [assigned, setAssigned] = useState<AssignedWorkout[]>([]);
@@ -91,10 +94,10 @@ export default function CoachPage() {
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1.5rem" }}>My Coach</Title>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("coach.title")}</Title>
 
       {/* Coach status */}
-      <Card header={<CardHeader titleText="Coach" />} style={{ marginBottom: "1.5rem" }}>
+      <Card header={<CardHeader titleText={t("coach.coachCard")} />} style={{ marginBottom: "1.5rem" }}>
         <div style={{ padding: "1rem 1.5rem" }}>
           {accepted ? (
             <FlexBox style={{ gap: "1rem", alignItems: "center" }}>
@@ -109,18 +112,18 @@ export default function CoachPage() {
                 <Text style={{ fontWeight: 600, display: "block" }}>{accepted.coachName ?? accepted.coachEmail}</Text>
                 <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.875rem" }}>{accepted.coachEmail}</Text>
               </div>
-              <Tag design="Set2" colorScheme="8">Active</Tag>
+              <Tag design="Set2" colorScheme="8">{t("coach.active")}</Tag>
             </FlexBox>
           ) : pending ? (
             <MessageStrip design="Information" hideCloseButton>
-              Request pending — waiting for {pending.coachName ?? pending.coachEmail} to accept.
+              {t("coach.pendingRequest", { name: pending.coachName ?? pending.coachEmail })}
             </MessageStrip>
           ) : (
             <div>
               <Text style={{ display: "block", marginBottom: "1rem", color: "var(--sapNeutralTextColor)" }}>
-                No coach yet. Browse available coaches and send a request.
+                {t("coach.noCoach")}
               </Text>
-              <Button design="Emphasized" onClick={openDialog}>Find a Coach</Button>
+              <Button design="Emphasized" onClick={openDialog}>{t("coach.findCoach")}</Button>
               {error && <Text style={{ color: "var(--sapNegativeTextColor)", marginTop: "0.5rem", display: "block" }}>{error}</Text>}
             </div>
           )}
@@ -130,13 +133,13 @@ export default function CoachPage() {
       {/* Assigned workouts */}
       <Card header={
         <CardHeader
-          titleText="Assigned Workouts"
-          subtitleText={unseenCount > 0 ? `${unseenCount} new` : undefined}
+          titleText={t("coach.assignedWorkouts")}
+          subtitleText={unseenCount > 0 ? t("coach.unseenCount_other", { count: unseenCount }) : undefined}
         />
       }>
         {assigned.length === 0 ? (
           <div style={{ padding: "2rem", textAlign: "center", color: "var(--sapNeutralTextColor)" }}>
-            No workouts assigned yet.
+            {t("coach.noAssigned")}
           </div>
         ) : (
           <div style={{ padding: "0.5rem 1rem 1rem" }}>
@@ -150,17 +153,17 @@ export default function CoachPage() {
                 <div style={{ flex: 1 }}>
                   <FlexBox style={{ gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
                     <Text style={{ fontWeight: 600 }}>{a.templateName}</Text>
-                    {!a.seenAt && <Tag design="Set2" colorScheme="5">New</Tag>}
+                    {!a.seenAt && <Tag design="Set2" colorScheme="5">{t("coach.new")}</Tag>}
                   </FlexBox>
                   {a.templateNotes && (
                     <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.875rem" }}>{a.templateNotes}</Text>
                   )}
                   <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.75rem", display: "block", marginTop: "0.25rem" }}>
-                    Assigned {new Date(a.assignedAt * 1000).toLocaleDateString()}
+                    {t("coach.assigned", { date: new Date(a.assignedAt * 1000).toLocaleDateString() })}
                   </Text>
                 </div>
                 <Button design="Emphasized" onClick={() => startWorkout(a.id, a.templateId)}>
-                  Start Workout
+                  {t("coach.startWorkout")}
                 </Button>
               </div>
             ))}
@@ -171,19 +174,19 @@ export default function CoachPage() {
       {/* Coach picker dialog */}
       <Dialog
         open={dialogOpen}
-        headerText="Find a Coach"
+        headerText={t("coach.findCoachTitle")}
         onClose={() => setDialogOpen(false)}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
-            <Button design="Transparent" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button design="Transparent" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
           </div>
         }
       >
         <div style={{ padding: "0.75rem 1rem 0" }}>
           {candidates.length === 0 ? (
             <Text style={{ color: "var(--sapNeutralTextColor)" }}>
-              No coaches available at the moment.
+              {t("coach.noCoaches")}
             </Text>
           ) : (
             <List style={{ maxHeight: 360, overflowY: "auto" }}>
@@ -208,7 +211,7 @@ export default function CoachPage() {
                       {c.bio && <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", marginTop: "0.2rem", fontStyle: "italic" }}>{c.bio}</div>}
                     </div>
                     {requesting === c.id && (
-                      <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>Sending...</Text>
+                      <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>{t("coach.sending")}</Text>
                     )}
                   </div>
                 </ListItemCustom>
