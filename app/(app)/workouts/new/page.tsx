@@ -343,36 +343,36 @@ export default function NewWorkoutPage() {
         {creating ? (
           <div style={{ padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <div>
-              <Label required>Name</Label>
+              <Label required>{t("newWorkout.name")}</Label>
               <Input value={newExName} onInput={(e: Ui5CustomEvent<InputDomRef>) => setNewExName(e.target.value ?? "")} style={{ width: "100%" }} placeholder="e.g. Bulgarian Split Squat" />
             </div>
             <div>
-              <Label required>Category</Label>
+              <Label required>{t("newWorkout.category")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExCategory(e.detail.selectedOption.value as string)}>
-                <Option value="strength" selected={newExCategory === "strength"}>Strength</Option>
-                <Option value="cardio" selected={newExCategory === "cardio"}>Cardio</Option>
-                <Option value="flexibility" selected={newExCategory === "flexibility"}>Flexibility</Option>
-                <Option value="other" selected={newExCategory === "other"}>Other</Option>
+                <Option value="strength" selected={newExCategory === "strength"}>{t("newWorkout.strength")}</Option>
+                <Option value="cardio" selected={newExCategory === "cardio"}>{t("newWorkout.cardio")}</Option>
+                <Option value="flexibility" selected={newExCategory === "flexibility"}>{t("newWorkout.flexibility")}</Option>
+                <Option value="other" selected={newExCategory === "other"}>{t("newWorkout.other")}</Option>
               </Select>
             </div>
             <div>
-              <Label>Muscle Group</Label>
+              <Label>{t("newWorkout.muscleGroup")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExMuscleGroup(e.detail.selectedOption.value as string)}>
-                <Option value="" selected={!newExMuscleGroup}>— None —</Option>
-                <Option value="chest">Chest</Option>
-                <Option value="back">Back</Option>
-                <Option value="legs">Legs</Option>
-                <Option value="shoulders">Shoulders</Option>
-                <Option value="arms">Arms</Option>
-                <Option value="core">Core</Option>
-                <Option value="full_body">Full Body</Option>
+                <Option value="" selected={!newExMuscleGroup}>{t("newWorkout.noneOption")}</Option>
+                <Option value="chest">{t("newWorkout.chest")}</Option>
+                <Option value="back">{t("newWorkout.back_muscle")}</Option>
+                <Option value="legs">{t("newWorkout.legs")}</Option>
+                <Option value="shoulders">{t("newWorkout.shoulders")}</Option>
+                <Option value="arms">{t("newWorkout.arms")}</Option>
+                <Option value="core">{t("newWorkout.core")}</Option>
+                <Option value="full_body">{t("newWorkout.fullBody")}</Option>
               </Select>
             </div>
           </div>
         ) : (
           <div style={{ padding: "0.75rem 1rem 0" }}>
             <Input
-              placeholder="Search exercises..."
+              placeholder={t("newWorkout.search")}
               value={search}
               onInput={handleInput(setSearch)}
               showClearIcon
@@ -392,12 +392,12 @@ export default function NewWorkoutPage() {
               </List>
             ) : (
               <div style={{ padding: "0.5rem 0 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <Text style={{ color: "var(--sapNeutralTextColor)" }}>No exercises found.</Text>
+                <Text style={{ color: "var(--sapNeutralTextColor)" }}>{t("newWorkout.noExercisesFound")}</Text>
                 <Button
                   design="Default"
                   onClick={() => { setNewExName(search); setCreating(true); }}
                 >
-                  + Create &ldquo;{search || "new exercise"}&rdquo;
+                  {t("newWorkout.createExercise", { name: search || "new exercise" })}
                 </Button>
               </div>
             )}
@@ -407,19 +407,19 @@ export default function NewWorkoutPage() {
 
       <Dialog
         open={planDialogOpen}
-        headerText="Start from Plan"
+        headerText={t("newWorkout.startFromPlan")}
         onClose={() => setPlanDialogOpen(false)}
         style={{ width: 480 }}
         footer={
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0.5rem 1rem", width: "100%", boxSizing: "border-box" }}>
-            <Button design="Transparent" onClick={() => setPlanDialogOpen(false)}>Cancel</Button>
+            <Button design="Transparent" onClick={() => setPlanDialogOpen(false)}>{t("newWorkout.cancel")}</Button>
           </div>
         }
       >
         <div style={{ padding: "0.75rem 1rem 0" }}>
           {myPlans.length === 0 ? (
             <Text style={{ color: "var(--sapNeutralTextColor)" }}>
-              No plans yet. Create one in the Plans section.
+              {t("newWorkout.noPlans")}
             </Text>
           ) : (
             <List style={{ maxHeight: 360, overflowY: "auto" }}>
