@@ -47,6 +47,14 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
 
   const initials = athlete.name ? athlete.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
+  // i18n keys: athletes.totalWorkouts, athletes.currentWeight, athletes.bodyFat, athletes.lastWorkout2
+  const stats = [
+    { label: "Total Workouts", value: String(wCount.count) },
+    { label: "Current Weight", value: latestMetric[0]?.weightKg ? `${latestMetric[0].weightKg} kg` : "—" },
+    { label: "Body Fat", value: latestMetric[0]?.bodyFatPct ? `${latestMetric[0].bodyFatPct}%` : "—" },
+    { label: "Last Workout", value: recentWorkouts[0] ? new Date(recentWorkouts[0].date).toLocaleDateString() : "—" },
+  ];
+
   return (
     <div>
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
@@ -62,14 +70,9 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
         <AssignTemplateButton athleteId={params.athleteId} coachId={coachId} />
       </FlexBox>
 
-      {/* Stats */}
+      {/* Stats — i18n keys: athletes.totalWorkouts / athletes.currentWeight / athletes.bodyFat / athletes.lastWorkout2 */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
-        {[
-          { label: "Total Workouts", value: String(wCount.count) },
-          { label: "Current Weight", value: latestMetric[0]?.weightKg ? `${latestMetric[0].weightKg} kg` : "—" },
-          { label: "Body Fat", value: latestMetric[0]?.bodyFatPct ? `${latestMetric[0].bodyFatPct}%` : "—" },
-          { label: "Last Workout", value: recentWorkouts[0] ? new Date(recentWorkouts[0].date).toLocaleDateString() : "—" },
-        ].map(stat => (
+        {stats.map(stat => (
           <Card key={stat.label} style={{ minWidth: 160, flex: "1 1 160px" }}>
             <div style={{ padding: "1rem", textAlign: "center" }}>
               <Text style={{ display: "block", color: "var(--sapNeutralTextColor)", fontSize: "0.8rem", fontWeight: 600, textTransform: "uppercase" }}>
@@ -81,13 +84,15 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
         ))}
       </div>
 
-      {/* Recent Workouts */}
+      {/* Recent Workouts — i18n key: athletes.recentWorkouts */}
       <Card header={<CardHeader titleText="Recent Workouts" />} style={{ marginBottom: "1.5rem" }}>
         {recentWorkouts.length === 0 ? (
+          /* i18n key: athletes.noWorkoutsYet */
           <EmptyState name="NoActivities" titleText="No workouts yet" subtitleText="" />
         ) : (
           <Table headerRow={
             <TableHeaderRow>
+              {/* i18n keys: athletes.workout / athletes.date */}
               <TableHeaderCell>Workout</TableHeaderCell>
               <TableHeaderCell>Date</TableHeaderCell>
             </TableHeaderRow>
@@ -102,13 +107,15 @@ export default async function AthleteDetailPage({ params }: { params: { athleteI
         )}
       </Card>
 
-      {/* Metrics History */}
+      {/* Metrics History — i18n key: athletes.metricsHistory */}
       <Card header={<CardHeader titleText="Metrics History" />}>
         {metrics.length === 0 ? (
+          /* i18n key: athletes.noMetrics */
           <EmptyState name="NoData" titleText="No metrics logged" subtitleText="" />
         ) : (
           <Table headerRow={
             <TableHeaderRow>
+              {/* i18n keys: athletes.date / athletes.weightKg / athletes.bodyFatPct / athletes.waistCm */}
               <TableHeaderCell>Date</TableHeaderCell>
               <TableHeaderCell>Weight (kg)</TableHeaderCell>
               <TableHeaderCell>Body Fat %</TableHeaderCell>

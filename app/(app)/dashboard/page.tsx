@@ -1,7 +1,8 @@
-import { auth } from "@/lib/auth";
-import { getDb } from "@/db";
-import { workouts, bodyMetrics } from "@/db/schema";
-import { eq, desc, gte, count, and } from "drizzle-orm";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { WelcomeIllustration } from "@/components/WelcomeIllustration";
@@ -27,38 +28,69 @@ const statColors = [
   { bg: "var(--sapIndicationColor_8b, #f5fce8)", accent: "var(--sapIndicationColor_8, #256f3a)", icon: "📆" },
 ];
 
-function getGreeting(totalWorkouts: number, weekWorkouts: number) {
-  if (totalWorkouts === 0) return { text: "Welcome! Log your first workout to get started.", design: "Information" as const };
-  if (weekWorkouts >= 4) return { text: "Amazing week — you've trained 4+ times already! Keep it up 💪", design: "Positive" as const };
-  if (weekWorkouts === 0) return { text: "You haven't trained this week yet. Time to get moving!", design: "Critical" as const };
-  return { text: `${weekWorkouts} workout${weekWorkouts > 1 ? "s" : ""} this week — great consistency!`, design: "Positive" as const };
-}
+type Workout = { id: number; name: string; date: string; notes: string | null };
+type Metric = { id: number; date: string; weightKg: number | null; bodyFatPct: number | null; waistCm: number | null };
 
-export default async function DashboardPage() {
-  const session = await auth();
-  const userId = session!.user!.id!;
+export default function DashboardPage() {
+  const { t } = useTranslation();
+  const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
+  const [latestMetric, setLatestMetric] = useState<Metric | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/workouts").then(r => r.json()),
+      fetch("/api/metrics").then(r => r.json()),
+    ]).then(([workoutsData, metricsData]) => {
+      setAllWorkouts(Array.isArray(workoutsData) ? workoutsData : []);
+      const metrics: Metric[] = Array.isArray(metricsData) ? metricsData : [];
+      setLatestMetric(metrics.length > 0 ? metrics[0] : null);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const total = allWorkouts.length;
+  const recentWorkouts = allWorkouts.slice(0, 5);
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
+  const week = allWorkouts.filter(w => new Date(w.date) >= weekAgo).length;
 
-  const [totalWorkouts, recentWorkouts, latestMetric, weekWorkouts] = await Promise.all([
-    getDb().select({ count: count() }).from(workouts).where(eq(workouts.userId, userId)),
-    getDb().select().from(workouts).where(eq(workouts.userId, userId)).orderBy(desc(workouts.date)).limit(5),
-    getDb().select().from(bodyMetrics).where(eq(bodyMetrics.userId, userId)).orderBy(desc(bodyMetrics.date)).limit(1),
-    getDb().select({ count: count() }).from(workouts).where(and(eq(workouts.userId, userId), gte(workouts.date, weekAgo))),
-  ]);
-
-  const total = totalWorkouts[0].count;
-  const week = weekWorkouts[0].count;
+  function getGreeting(totalWorkouts: number, weekWorkouts: number): { text: string; design: "Information" | "Positive" | "Critical" } {
+    if (totalWorkouts === 0) return { text: t("dashboard.greeting_first"), design: "Information" };
+    if (weekWorkouts >= 4) return { text: t("dashboard.greeting_great_week"), design: "Positive" };
+    if (weekWorkouts === 0) return { text: t("dashboard.greeting_no_week"), design: "Critical" };
+    return {
+      text: weekWorkouts === 1
+        ? t("dashboard.greeting_week", { count: weekWorkouts })
+        : t("dashboard.greeting_week_plural", { count: weekWorkouts }),
+      design: "Positive",
+    };
+  }
 
   const stats = [
-    { label: "Total Workouts", value: String(total) },
-    { label: "This Week", value: String(week) },
-    { label: "Current Weight", value: latestMetric[0]?.weightKg ? `${latestMetric[0].weightKg} kg` : "—" },
-    { label: "Last Workout", value: recentWorkouts[0] ? new Date(recentWorkouts[0].date).toLocaleDateString() : "—" },
+    { label: t("dashboard.totalWorkouts"), value: String(total) },
+    { label: t("dashboard.thisWeek"), value: String(week) },
+    { label: t("dashboard.currentWeight"), value: latestMetric?.weightKg ? `${latestMetric.weightKg} kg` : "—" },
+    { label: t("dashboard.lastWorkout"), value: recentWorkouts[0] ? new Date(recentWorkouts[0].date).toLocaleDateString() : "—" },
   ];
 
   const greeting = getGreeting(total, week);
+
+  if (loading) {
+    return (
+      <div>
+        <Card style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+          <div style={{ padding: "2rem 1rem 1rem" }}>
+            <WelcomeIllustration
+              titleText={t("dashboard.welcome")}
+              subtitleText={t("common.loading")}
+            />
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -68,15 +100,15 @@ export default async function DashboardPage() {
           <Card style={{ marginBottom: "1.5rem", textAlign: "center" }}>
             <div style={{ padding: "2rem 1rem 1rem" }}>
               <WelcomeIllustration
-                titleText="Welcome to MakeUFit!"
-                subtitleText="Your personal fitness companion. Track workouts, follow structured plans, and stay accountable with a coach."
+                titleText={t("dashboard.welcome")}
+                subtitleText={t("dashboard.subtitle")}
               />
             </div>
           </Card>
 
           {/* Getting started cards */}
           <Title level="H4" style={{ marginBottom: "1rem", color: "var(--sapNeutralTextColor)" }}>
-            Get started — pick what fits you
+            {t("dashboard.getStarted")}
           </Title>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
             <Card>
@@ -85,13 +117,13 @@ export default async function DashboardPage() {
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--sapIndicationColor_5b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="add" style={{ color: "var(--sapIndicationColor_5)", fontSize: "1.25rem" }} />
                   </div>
-                  <Title level="H5" style={{ margin: 0 }}>Log a workout</Title>
+                  <Title level="H5" style={{ margin: 0 }}>{t("dashboard.logWorkout")}</Title>
                 </div>
                 <Text style={{ color: "var(--sapNeutralTextColor)", flex: 1 }}>
-                  Just finished a session? Record your exercises, sets, reps and weights directly — no plan needed.
+                  {t("dashboard.logWorkoutDesc")}
                 </Text>
                 <Link href="/workouts/new">
-                  <Button design="Emphasized" style={{ width: "100%" }}>Start Logging</Button>
+                  <Button design="Emphasized" style={{ width: "100%" }}>{t("dashboard.startLogging")}</Button>
                 </Link>
               </div>
             </Card>
@@ -102,13 +134,13 @@ export default async function DashboardPage() {
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--sapIndicationColor_7b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="document-text" style={{ color: "var(--sapIndicationColor_7)", fontSize: "1.25rem" }} />
                   </div>
-                  <Title level="H5" style={{ margin: 0 }}>Follow a plan</Title>
+                  <Title level="H5" style={{ margin: 0 }}>{t("dashboard.followPlan")}</Title>
                 </div>
                 <Text style={{ color: "var(--sapNeutralTextColor)", flex: 1 }}>
-                  Browse structured workout plans created by coaches. Add one to your profile and follow it week by week.
+                  {t("dashboard.followPlanDesc")}
                 </Text>
                 <Link href="/plans">
-                  <Button design="Default" style={{ width: "100%" }}>Browse Plans</Button>
+                  <Button design="Default" style={{ width: "100%" }}>{t("dashboard.browsePlans")}</Button>
                 </Link>
               </div>
             </Card>
@@ -119,13 +151,13 @@ export default async function DashboardPage() {
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--sapIndicationColor_8b)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="manager" style={{ color: "var(--sapIndicationColor_8)", fontSize: "1.25rem" }} />
                   </div>
-                  <Title level="H5" style={{ margin: 0 }}>Get a coach</Title>
+                  <Title level="H5" style={{ margin: 0 }}>{t("dashboard.getCoach")}</Title>
                 </div>
                 <Text style={{ color: "var(--sapNeutralTextColor)", flex: 1 }}>
-                  Want personalised guidance? Connect with a coach who will assign workouts and track your progress.
+                  {t("dashboard.getCoachDesc")}
                 </Text>
                 <Link href="/coach">
-                  <Button design="Default" style={{ width: "100%" }}>Find a Coach</Button>
+                  <Button design="Default" style={{ width: "100%" }}>{t("dashboard.findCoach")}</Button>
                 </Link>
               </div>
             </Card>
@@ -160,16 +192,16 @@ export default async function DashboardPage() {
 
           <Card header={
             <CardHeader
-              titleText="Recent Workouts"
+              titleText={t("dashboard.recentWorkouts")}
               action={
                 <Link href="/workouts/new">
-                  <Button design="Emphasized">New Workout</Button>
+                  <Button design="Emphasized">{t("dashboard.newWorkout")}</Button>
                 </Link>
               }
             />
           }>
             {recentWorkouts.length === 0 ? (
-              <EmptyState name="NoActivities" titleText="No workouts yet" subtitleText="Log your first session to see it here" />
+              <EmptyState name="NoActivities" titleText={t("dashboard.noWorkouts")} subtitleText={t("dashboard.noWorkoutsSubtitle")} />
             ) : (
               <List>
                 {recentWorkouts.map((w) => (
