@@ -19,7 +19,10 @@ import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
 import "@ui5/webcomponents-icons/dist/light-mode.js";
 import "@ui5/webcomponents-icons/dist/dark-mode.js";
-import "@ui5/webcomponents-icons/dist/world.js";
+import { unsafeRegisterIcon } from "@ui5/webcomponents-base/dist/asset-registries/Icons.js";
+
+unsafeRegisterIcon("lang-en", { collection: "custom", packageName: "custom", customTemplateAsString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text x="8" y="12" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="currentColor">EN</text></svg>` });
+unsafeRegisterIcon("lang-bg", { collection: "custom", packageName: "custom", customTemplateAsString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text x="8" y="12" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="currentColor">БГ</text></svg>` });
 import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
 import { setLanguage } from "@ui5/webcomponents-base/dist/config/Language.js";
 import {
@@ -125,69 +128,49 @@ export function AppShell({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <ShellBar
-          primaryTitle={t("shell.appTitle")}
-          onLogoClick={() => router.push("/dashboard")}
-          logo={
-            <span style={{ display: "flex", alignItems: "center", color: "var(--sapContent_IconColor)" }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                style={{ width: 28, height: 28, fill: "currentColor" }}
-              >
-                <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" transform="rotate(-45 12 12)" />
-              </svg>
-            </span>
-          }
-          startButton={isMobile
-            ? <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
-            : undefined
-          }
-          profile={
-            <Avatar
-              initials={userImage ? undefined : initials}
-              colorScheme="Accent6"
-              size="XS"
-              accessibleName={userName ?? "User"}
+      <ShellBar
+        primaryTitle={t("shell.appTitle")}
+        onLogoClick={() => router.push("/dashboard")}
+        style={{ flexShrink: 0 }}
+        logo={
+          <span style={{ display: "flex", alignItems: "center", color: "var(--sapContent_IconColor)" }}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              style={{ width: 28, height: 28, fill: "currentColor" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {userImage && <img src={userImage} alt={userName ?? "User"} />}
-            </Avatar>
-          }
-          onProfileClick={handleProfileClick}
-        >
-          <ShellBarItem
-            icon={isDark ? "light-mode" : "dark-mode"}
-            text={isDark ? t("shell.lightMode") : t("shell.darkMode")}
-            onClick={toggleTheme}
-          />
-        </ShellBar>
-        {/* Lang toggle overlaid before the profile avatar */}
-        <button
+              <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" transform="rotate(-45 12 12)" />
+            </svg>
+          </span>
+        }
+        startButton={isMobile
+          ? <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
+          : undefined
+        }
+        profile={
+          <Avatar
+            initials={userImage ? undefined : initials}
+            colorScheme="Accent6"
+            size="XS"
+            accessibleName={userName ?? "User"}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {userImage && <img src={userImage} alt={userName ?? "User"} />}
+          </Avatar>
+        }
+        onProfileClick={handleProfileClick}
+      >
+        <ShellBarItem
+          icon={isDark ? "light-mode" : "dark-mode"}
+          text={isDark ? t("shell.lightMode") : t("shell.darkMode")}
+          onClick={toggleTheme}
+        />
+        <ShellBarItem
+          icon={`custom/lang-${i18n.language === "bg" ? "bg" : "en"}`}
+          text={t("shell.lang")}
           onClick={toggleLang}
-          style={{
-            position: "absolute",
-            top: "50%",
-            right: "3rem",
-            transform: "translateY(-50%)",
-            background: "transparent",
-            border: "none",
-            color: "var(--sapShell_TextColor, #fff)",
-            fontFamily: "inherit",
-            fontSize: "0.8125rem",
-            fontWeight: 700,
-            cursor: "pointer",
-            padding: "0.25rem 0.375rem",
-            letterSpacing: "0.04em",
-            lineHeight: 1,
-            borderRadius: 4,
-            zIndex: 10,
-          }}
-        >
-          {t("shell.lang")}
-        </button>
-      </div>
+        />
+      </ShellBar>
 
       {menuOpen && createPortal(
         <div
