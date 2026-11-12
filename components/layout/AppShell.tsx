@@ -17,7 +17,10 @@ import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
 import "@ui5/webcomponents-icons/dist/light-mode.js";
 import "@ui5/webcomponents-icons/dist/dark-mode.js";
+import "@ui5/webcomponents-icons/dist/text-align-left.js";
+import "@ui5/webcomponents-icons/dist/text-align-right.js";
 import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
+import applyDirection from "@ui5/webcomponents-base/dist/locale/applyDirection.js";
 import {
   Avatar,
   Button,
@@ -57,6 +60,7 @@ export function AppShell({
   const [isMobile, setIsMobile] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { role } = useRole();
 
@@ -113,6 +117,13 @@ export function AppShell({
     setIsDark(d => !d);
   }
 
+  async function toggleDirection() {
+    const next = isRTL ? "ltr" : "rtl";
+    document.body.dir = next;
+    await applyDirection();
+    setIsRTL(r => !r);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <ShellBar
@@ -151,6 +162,11 @@ export function AppShell({
           icon={isDark ? "light-mode" : "dark-mode"}
           text={isDark ? "Light mode" : "Dark mode"}
           onClick={toggleTheme}
+        />
+        <ShellBarItem
+          icon={isRTL ? "text-align-left" : "text-align-right"}
+          text={isRTL ? "Switch to LTR" : "Switch to RTL"}
+          onClick={toggleDirection}
         />
       </ShellBar>
 
