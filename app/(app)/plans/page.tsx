@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import {
   Button,
   Card,
@@ -33,6 +35,7 @@ type FollowedPlan = {
 };
 
 export default function PlansPage() {
+  const { t } = useTranslation();
   const [myPlans, setMyPlans] = useState<Plan[]>([]);
   const [followedPlans, setFollowedPlans] = useState<FollowedPlan[]>([]);
   const [publicPlans, setPublicPlans] = useState<Plan[]>([]);
@@ -62,9 +65,9 @@ export default function PlansPage() {
   return (
     <div>
       <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
-        <Title level="H2">Workout Plans</Title>
+        <Title level="H2">{t("plans.title")}</Title>
         <Link href="/plans/new">
-          <Button design="Emphasized">New Plan</Button>
+          <Button design="Emphasized">{t("plans.newPlan")}</Button>
         </Link>
       </FlexBox>
 
@@ -72,14 +75,14 @@ export default function PlansPage() {
         <Card>
           <EmptyState
             name="NoData"
-            titleText="No plans yet"
-            subtitleText="Create your own plan or browse public ones from coaches"
+            titleText={t("plans.noPlans")}
+            subtitleText={t("plans.noPlansSubtitle")}
           />
         </Card>
       )}
 
       {myPlans.length > 0 && (
-        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>My Plans</div>} style={{ marginBottom: "1.5rem" }}>
+        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.myPlans")}</div>} style={{ marginBottom: "1.5rem" }}>
           <List>
             {myPlans.map(p => (
               <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
@@ -87,14 +90,14 @@ export default function PlansPage() {
                   <Link href={`/plans/${p.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
                       <span style={{ fontWeight: 600, color: "var(--sapTextColor)" }}>{p.name}</span>
-                      {p.isPublic && <Tag design="Set2" colorScheme="8" style={{ fontSize: "0.7rem" }}>Public</Tag>}
+                      {p.isPublic && <Tag design="Set2" colorScheme="8" style={{ fontSize: "0.7rem" }}>{t("plans.public")}</Tag>}
                     </div>
                     <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
                       {p.sessionCount} session{p.sessionCount !== 1 ? "s" : ""} · {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
                       {p.description && ` · ${p.description}`}
                     </div>
                   </Link>
-                  <DeleteButton url={`/api/plans/${p.id}`} label="Delete" onDeleted={() => setMyPlans(prev => prev.filter(x => x.id !== p.id))} />
+                  <DeleteButton url={`/api/plans/${p.id}`} label={t("plans.delete")} onDeleted={() => setMyPlans(prev => prev.filter(x => x.id !== p.id))} />
                 </div>
               </ListItemCustom>
             ))}
@@ -103,7 +106,7 @@ export default function PlansPage() {
       )}
 
       {followedPlans.length > 0 && (
-        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>Following</div>} style={{ marginBottom: "1.5rem" }}>
+        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.following")}</div>} style={{ marginBottom: "1.5rem" }}>
           <List>
             {followedPlans.map(p => (
               <ListItemCustom key={p.planId} style={{ padding: "0.75rem 1rem" }}>
@@ -121,7 +124,7 @@ export default function PlansPage() {
       )}
 
       {publicPlans.length > 0 && (
-        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>Public Plans</div>}>
+        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.publicPlans")}</div>}>
           <List>
             {publicPlans.map(p => (
               <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>

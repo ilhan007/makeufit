@@ -19,6 +19,7 @@ import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
 import "@ui5/webcomponents-icons/dist/light-mode.js";
 import "@ui5/webcomponents-icons/dist/dark-mode.js";
+import "@ui5/webcomponents-icons/dist/world.js";
 import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
 import { setLanguage } from "@ui5/webcomponents-base/dist/config/Language.js";
 import {
@@ -161,23 +162,12 @@ export function AppShell({
           text={isDark ? t("shell.lightMode") : t("shell.darkMode")}
           onClick={toggleTheme}
         />
-        <button
-          slot="additionalContext"
+        <ShellBarItem
+          icon="world"
+          text={t("shell.lang")}
+          count={t("shell.lang")}
           onClick={toggleLang}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "var(--sapShell_TextColor, #fff)",
-            fontFamily: "inherit",
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            padding: "0 0.5rem",
-            letterSpacing: "0.03em",
-          }}
-        >
-          {t("shell.lang")}
-        </button>
+        />
       </ShellBar>
 
       {menuOpen && createPortal(

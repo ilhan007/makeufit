@@ -157,3 +157,17 @@ export const athletePlans = sqliteTable("athlete_plans", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+// Completed plan days — one row per day a follower marks as done
+export const planDayCompletions = sqliteTable("plan_day_completions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  athletePlanId: integer("athlete_plan_id")
+    .notNull()
+    .references(() => athletePlans.id, { onDelete: "cascade" }),
+  dayNumber: integer("day_number").notNull(),
+  workoutId: integer("workout_id")
+    .references(() => workouts.id, { onDelete: "set null" }),
+  completedAt: integer("completed_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

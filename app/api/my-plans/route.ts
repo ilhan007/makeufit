@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     .values({
       athleteId: session.user.id,
       planId: parsed.data.planId,
-      startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : undefined,
+      startDate: new Date(),
     })
     .returning();
 
