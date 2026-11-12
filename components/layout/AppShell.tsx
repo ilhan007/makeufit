@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRole } from "@/components/layout/RoleContext";
 import "@ui5/webcomponents-icons/dist/home.js";
-import "@ui5/webcomponents-icons/dist/activity-2.js";
+import "@ui5/webcomponents-icons/dist/physical-activity.js";
 import "@ui5/webcomponents-icons/dist/bbyd-dashboard.js";
 import "@ui5/webcomponents-icons/dist/bar-chart.js";
 import "@ui5/webcomponents-icons/dist/log.js";
@@ -17,6 +17,7 @@ import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
 import {
   Avatar,
+  Button,
   Icon,
   ShellBar,
   SideNavigation,
@@ -26,7 +27,7 @@ import type { ReactNode } from "react";
 
 const allNavItems = [
   { text: "Dashboard", icon: "home", href: "/dashboard", roles: ["athlete", "coach", "both"] },
-  { text: "Workout History", icon: "activity-2", href: "/workouts", roles: ["athlete", "coach", "both"] },
+  { text: "Workout History", icon: "physical-activity", href: "/workouts", roles: ["athlete", "coach", "both"] },
   { text: "Workout Plans", icon: "document-text", href: "/plans", roles: ["athlete", "coach", "both"] },
   { text: "Progress", icon: "bbyd-dashboard", href: "/metrics", roles: ["athlete", "coach", "both"] },
   { text: "My Coach", icon: "manager", href: "/coach", roles: ["athlete", "both"] },
@@ -109,19 +110,15 @@ export function AppShell({
         onLogoClick={() => router.push("/dashboard")}
         style={{ flexShrink: 0 }}
         logo={
-          <div onClick={() => router.push("/dashboard")} style={{ cursor: "pointer", display: "flex", alignItems: "center" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="28" height="28">
-              <path fill="#ffffff" d="M8.715 4.006c.241-.03.5.01.647.238.336.523.641 1.041 1.08 1.491.653.67 1.582 1.284 2.809 1.284a.75.75 0 0 1 0 1.5c-1.915 0-3.26-1.04-4.07-1.94l-.362 1.668 1.944 2.032c.133.14.208.326.208.519v4.452a.75.75 0 0 1-1.5 0v-4.151L8.264 9.836 7.192 12.5a.75.75 0 0 1-.89.444l-3.747-1.01a.75.75 0 1 1 .39-1.448l3.103.836 1.227-3.045.576-2.653-2.331.291v1.863a.751.751 0 0 1-1.5 0V5.255a.75.75 0 0 1 .656-.744l4.04-.505ZM9.5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
-            </svg>
-          </div>
+          <Icon
+            name="physical-activity"
+            style={{ width: 28, height: 28, color: "#fff", cursor: "pointer" }}
+            onClick={() => router.push("/dashboard")}
+          />
         }
         startButton={
           isMobile ? (
-            <Icon
-              name="menu2"
-              style={{ width: 24, height: 24, color: "#fff", cursor: "pointer" }}
-              onClick={() => setNavOpen(o => !o)}
-            />
+            <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
           ) : undefined
         }
         profile={
