@@ -4,22 +4,22 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n/config";
+import "@ui5/webcomponents-icons/dist/add.js";
+import "@ui5/webcomponents-icons/dist/delete.js";
 import type { Ui5CustomEvent, InputDomRef } from "@ui5/webcomponents-react";
 import {
   Button,
   Card,
-  CardHeader,
   CheckBox,
   Dialog,
-  FlexBox,
-  FlexBoxDirection,
-  FlexBoxJustifyContent,
+  Icon,
   Input,
   Label,
   List,
   ListItemStandard,
   Option,
   Select,
+  Tag,
   Text,
   Title,
 } from "@ui5/webcomponents-react";
@@ -30,6 +30,15 @@ type ExerciseEntry = { exercise: Exercise; sets: SetEntry[] };
 type Session = { tempId: number; dayNumber: number; name: string; exercises: ExerciseEntry[] };
 
 let tempIdCounter = 0;
+
+const DAY_ACCENTS = [
+  { bg: "var(--sapIndicationColor_5b, #e8f4ff)", accent: "var(--sapIndicationColor_5, #0070f2)" },
+  { bg: "var(--sapIndicationColor_7b, #f5f0ff)", accent: "var(--sapIndicationColor_7, #6c32a9)" },
+  { bg: "var(--sapIndicationColor_8b, #f5fce8)", accent: "var(--sapIndicationColor_8, #256f3a)" },
+  { bg: "var(--sapIndicationColor_1b, #fef7e0)", accent: "var(--sapIndicationColor_1, #e9730c)" },
+  { bg: "var(--sapIndicationColor_6b, #fdf0f0)", accent: "var(--sapIndicationColor_6, #c0392b)" },
+  { bg: "var(--sapIndicationColor_3b, #e8f8ff)", accent: "var(--sapIndicationColor_3, #0854a0)" },
+];
 
 export default function NewPlanPage() {
   const router = useRouter();
@@ -43,7 +52,6 @@ export default function NewPlanPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Exercise picker dialog state
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSessionTempId, setPickerSessionTempId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -161,9 +169,8 @@ export default function NewPlanPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), description: description.trim() || undefined, weeksCount: parseInt(weeksCount) || 4, isPublic }),
       });
-      if (!planRes.ok) throw new Error("Failed to create plan");
+      if (!planRes.ok) throw new Error("Failed");
       const plan = await planRes.json();
-
       for (const session of sessions) {
         await fetch(`/api/plans/${plan.id}/sessions`, {
           method: "POST",
@@ -183,7 +190,6 @@ export default function NewPlanPage() {
           }),
         });
       }
-
       router.push("/plans");
     } catch {
       setError(t("newWorkout.error"));
@@ -193,88 +199,193 @@ export default function NewPlanPage() {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: 800, paddingBottom: "5rem" }}>
       <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("plans.newPlan")}</Title>
 
-      <Card header={<CardHeader titleText={t("plans.planDetails")} />} style={{ marginBottom: "1rem" }}>
-        <FlexBox direction={FlexBoxDirection.Column} style={{ gap: "1rem", padding: "1rem" }}>
-          <div>
-            <Label required>{t("newWorkout.name")}</Label>
-            <Input value={name} onInput={handleInput(setName)} placeholder={t("plans.namePlaceholder")} style={{ width: "100%" }} />
-          </div>
-          <div>
-            <Label>{t("plans.description")}</Label>
-            <Input value={description} onInput={handleInput(setDescription)} placeholder={t("plans.descriptionPlaceholder")} style={{ width: "100%" }} />
-          </div>
-          <FlexBox style={{ gap: "2rem", alignItems: "center", flexWrap: "wrap" }}>
+      {/* Plan details card */}
+      <Card style={{ marginBottom: "1.5rem", borderRadius: 12, overflow: "hidden" }}>
+        {/* Colored header stripe */}
+        <div style={{ background: "var(--sapIndicationColor_5b, #e8f4ff)", borderBottom: "1px solid var(--sapTileBorderColor)", padding: "0.85rem 1.25rem" }}>
+          <Text style={{ fontWeight: 700, fontSize: "1rem", color: "var(--sapIndicationColor_5, #0070f2)" }}>
+            {t("plans.planDetails")}
+          </Text>
+        </div>
+        <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {/* Name + Description side by side on wide screens */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
-              <Label required>{t("plans.durationWeeks")}</Label>
-              <Input value={weeksCount} onInput={handleInput(setWeeksCount)} type="Number" style={{ width: 100 }} />
+              <Label required style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>{t("newWorkout.name")}</Label>
+              <Input value={name} onInput={handleInput(setName)} placeholder={t("plans.namePlaceholder")} style={{ width: "100%" }} />
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1.25rem" }}>
+            <div>
+              <Label style={{ display: "block", marginBottom: "0.35rem", fontWeight: 600 }}>{t("plans.description")}</Label>
+              <Input value={description} onInput={handleInput(setDescription)} placeholder={t("plans.descriptionPlaceholder")} style={{ width: "100%" }} />
+            </div>
+          </div>
+          {/* Duration + Public toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <Label required style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{t("plans.durationWeeks")}</Label>
+              <Input value={weeksCount} onInput={handleInput(setWeeksCount)} type="Number" style={{ width: 80 }} />
+            </div>
+            <div style={{
+              display: "flex", alignItems: "center", gap: "0.6rem",
+              padding: "0.5rem 1rem", borderRadius: 8,
+              background: isPublic ? "var(--sapIndicationColor_8b, #f5fce8)" : "var(--sapTileBackground)",
+              border: `1px solid ${isPublic ? "var(--sapPositiveColor, #256f3a)" : "var(--sapTileBorderColor)"}`,
+              transition: "background 0.15s, border-color 0.15s",
+              cursor: "pointer",
+            }} onClick={() => setIsPublic(p => !p)}>
               <CheckBox checked={isPublic} onChange={(e) => setIsPublic(e.target.checked ?? false)} />
-              <Label>{t("plans.makePublic")}</Label>
+              <Label style={{ cursor: "pointer", color: isPublic ? "var(--sapPositiveColor, #256f3a)" : "var(--sapTextColor)", fontWeight: isPublic ? 600 : 400 }}>
+                {t("plans.makePublic")}
+              </Label>
+              {isPublic && <Tag design="Set2" colorScheme="8" style={{ fontSize: "0.7rem" }}>{t("plans.public")}</Tag>}
             </div>
-          </FlexBox>
-        </FlexBox>
+          </div>
+        </div>
       </Card>
 
-      {sessions.map((session) => (
-        <Card
-          key={session.tempId}
-          header={
-            <CardHeader
-              titleText={t("plans.day", { number: session.dayNumber })}
-              action={<Button design="Negative" onClick={() => removeSession(session.tempId)}>{t("common.delete")}</Button>}
-            />
-          }
-          style={{ marginBottom: "1rem" }}
-        >
-          <div style={{ padding: "1rem" }}>
-            <div style={{ marginBottom: "1rem" }}>
-              <Label>{t("plans.sessionName")}</Label>
-              <Input
-                value={session.name}
-                onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSessionName(session.tempId, e.target.value ?? "")}
-                style={{ width: "100%" }}
-              />
+      {/* Day session cards */}
+      {sessions.map((session, sessionIndex) => {
+        const accent = DAY_ACCENTS[sessionIndex % DAY_ACCENTS.length];
+        return (
+          <Card key={session.tempId} style={{ marginBottom: "1rem", borderRadius: 12, overflow: "hidden" }}>
+            {/* Colored day header */}
+            <div style={{
+              background: accent.bg,
+              borderBottom: "1px solid var(--sapTileBorderColor)",
+              padding: "0.75rem 1.25rem",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: accent.accent, color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 700, fontSize: "0.8rem", flexShrink: 0,
+                }}>
+                  {session.dayNumber}
+                </div>
+                <Input
+                  value={session.name}
+                  onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSessionName(session.tempId, e.target.value ?? "")}
+                  style={{ minWidth: 160, background: "transparent" }}
+                />
+              </div>
+              <Button design="Transparent" onClick={() => removeSession(session.tempId)}>
+                <Icon name="delete" style={{ color: "var(--sapNegativeTextColor)" }} />
+              </Button>
             </div>
 
-            {session.exercises.map((entry, exIdx) => (
-              <div key={entry.exercise.id + "-" + exIdx} style={{ marginBottom: "1rem", padding: "0.75rem", background: "var(--sapTileBackground)", borderRadius: 8 }}>
-                <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "0.5rem", alignItems: "center" }}>
-                  <Text style={{ fontWeight: 600 }}>{entry.exercise.name}</Text>
-                  <Button design="Transparent" onClick={() => removeExercise(session.tempId, exIdx)}>✕</Button>
-                </FlexBox>
-                <div style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.5rem", fontWeight: "bold", fontSize: "0.8rem" }}>
-                  <span>{t("workoutDetail.set")}</span><span>{t("workoutDetail.reps")}</span><span>{t("workoutDetail.weight")}</span><span>{t("workoutDetail.duration")}</span><span />
-                </div>
-                {entry.sets.map(set => (
-                  <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "3rem 1fr 1fr 1fr 2rem", gap: "0.5rem", marginBottom: "0.4rem", alignItems: "center" }}>
-                    <Text>{set.setNumber}</Text>
-                    <Input value={set.reps} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "reps", e.target.value ?? "")} placeholder="—" />
-                    <Input value={set.weightKg} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "weightKg", e.target.value ?? "")} placeholder="—" />
-                    <Input value={set.durationSeconds} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "durationSeconds", e.target.value ?? "")} placeholder="—" />
-                    <Button design="Transparent" onClick={() => removeSet(session.tempId, exIdx, set.tempId)}>✕</Button>
+            <div style={{ padding: "1rem 1.25rem" }}>
+              {/* Exercise blocks */}
+              {session.exercises.map((entry, exIdx) => (
+                <div key={entry.exercise.id + "-" + exIdx} style={{
+                  marginBottom: "0.75rem", borderRadius: 8,
+                  border: `1px solid ${accent.accent}33`,
+                  background: accent.bg + "66",
+                  overflow: "hidden",
+                }}>
+                  {/* Exercise header */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "0.5rem 0.75rem",
+                    borderBottom: `1px solid ${accent.accent}22`,
+                    background: accent.bg,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <Text style={{ fontWeight: 700, fontSize: "0.9rem" }}>{entry.exercise.name}</Text>
+                      <Tag design="Set2" colorScheme="5" style={{ fontSize: "0.65rem" }}>
+                        {entry.exercise.muscleGroup ? entry.exercise.muscleGroup.replace(/_/g, " ") : entry.exercise.category}
+                      </Tag>
+                    </div>
+                    <Button design="Transparent" onClick={() => removeExercise(session.tempId, exIdx)} style={{ padding: "0 0.25rem" }}>
+                      <Icon name="delete" style={{ fontSize: "0.875rem", color: "var(--sapNeutralTextColor)" }} />
+                    </Button>
                   </div>
-                ))}
-                <Button onClick={() => addSet(session.tempId, exIdx)} style={{ marginTop: "0.25rem" }}>{t("newWorkout.addSet")}</Button>
-              </div>
-            ))}
 
-            <Button onClick={() => openExercisePicker(session.tempId)}>{t("newWorkout.addExercise")}</Button>
-          </div>
-        </Card>
-      ))}
+                  {/* Sets table */}
+                  <div style={{ padding: "0.5rem 0.75rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.35rem" }}>
+                      {[t("workoutDetail.set"), t("workoutDetail.reps"), t("workoutDetail.weight"), t("workoutDetail.duration"), ""].map((h, i) => (
+                        <span key={i} style={{ fontSize: "0.7rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{h}</span>
+                      ))}
+                    </div>
+                    {entry.sets.map(set => (
+                      <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.3rem", alignItems: "center" }}>
+                        <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", textAlign: "center" }}>{set.setNumber}</Text>
+                        <Input value={set.reps} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "reps", e.target.value ?? "")} placeholder="—" />
+                        <Input value={set.weightKg} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "weightKg", e.target.value ?? "")} placeholder="—" />
+                        <Input value={set.durationSeconds} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "durationSeconds", e.target.value ?? "")} placeholder="—" />
+                        <button onClick={() => removeSet(session.tempId, exIdx, set.tempId)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--sapNeutralTextColor)", fontSize: "0.9rem", padding: 0 }}>✕</button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addSet(session.tempId, exIdx)}
+                      style={{
+                        marginTop: "0.25rem", border: `1px dashed ${accent.accent}`, borderRadius: 6,
+                        background: "none", cursor: "pointer", padding: "0.25rem 0.75rem",
+                        fontSize: "0.8rem", color: accent.accent, fontFamily: "inherit",
+                      }}
+                    >
+                      + {t("newWorkout.addSet")}
+                    </button>
+                  </div>
+                </div>
+              ))}
 
-      <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginTop: "1rem" }}>
-        <Button onClick={addSession}>{t("plans.addDay")}</Button>
-        <FlexBox style={{ gap: "0.5rem", alignItems: "center" }}>
-          {error && <Text style={{ color: "var(--sapNegativeTextColor)" }}>{error}</Text>}
-          <Button onClick={() => router.push("/plans")}>{t("common.cancel")}</Button>
-          <Button design="Emphasized" onClick={save} disabled={saving}>{saving ? t("plans.saving") : t("plans.savePlan")}</Button>
-        </FlexBox>
-      </FlexBox>
+              {/* Add exercise button */}
+              <button
+                onClick={() => openExercisePicker(session.tempId)}
+                style={{
+                  width: "100%", padding: "0.6rem", borderRadius: 8,
+                  border: `2px dashed ${accent.accent}55`,
+                  background: "none", cursor: "pointer",
+                  color: accent.accent, fontFamily: "inherit",
+                  fontSize: "0.875rem", fontWeight: 600,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                }}
+              >
+                <Icon name="add" style={{ fontSize: "0.875rem", color: accent.accent }} />
+                {t("newWorkout.addExercise")}
+              </button>
+            </div>
+          </Card>
+        );
+      })}
+
+      {/* Add Day button */}
+      <button
+        onClick={addSession}
+        style={{
+          width: "100%", padding: "0.85rem", borderRadius: 12, marginBottom: "1rem",
+          border: "2px dashed var(--sapTileBorderColor)",
+          background: "none", cursor: "pointer",
+          color: "var(--sapNeutralTextColor)", fontFamily: "inherit",
+          fontSize: "0.95rem", fontWeight: 600,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+        }}
+      >
+        <Icon name="add" style={{ fontSize: "1rem", color: "var(--sapNeutralTextColor)" }} />
+        {t("plans.addDay")}
+      </button>
+
+      {/* Sticky bottom action bar */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: "var(--sapPageBackground, #f5f5f5)",
+        borderTop: "1px solid var(--sapTileBorderColor)",
+        padding: "0.75rem 2rem",
+        display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.75rem",
+        zIndex: 100,
+      }}>
+        {error && <Text style={{ color: "var(--sapNegativeTextColor)", fontSize: "0.875rem" }}>{error}</Text>}
+        <Button onClick={() => router.push("/plans")}>{t("common.cancel")}</Button>
+        <Button design="Emphasized" onClick={save} disabled={saving}>
+          {saving ? t("plans.saving") : t("plans.savePlan")}
+        </Button>
+      </div>
 
       {/* Exercise picker dialog */}
       <Dialog
@@ -300,11 +411,11 @@ export default function NewPlanPage() {
         {creating ? (
           <div style={{ padding: "0.75rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <div>
-              <Label required>{t("newWorkout.name")}</Label>
+              <Label required style={{ display: "block", marginBottom: "0.35rem" }}>{t("newWorkout.name")}</Label>
               <Input value={newExName} onInput={(e: Ui5CustomEvent<InputDomRef>) => setNewExName(e.target.value ?? "")} style={{ width: "100%" }} placeholder="e.g. Bulgarian Split Squat" />
             </div>
             <div>
-              <Label required>{t("newWorkout.category")}</Label>
+              <Label required style={{ display: "block", marginBottom: "0.35rem" }}>{t("newWorkout.category")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExCategory(e.detail.selectedOption.value as string)}>
                 <Option value="strength" selected={newExCategory === "strength"}>{t("newWorkout.strength")}</Option>
                 <Option value="cardio" selected={newExCategory === "cardio"}>{t("newWorkout.cardio")}</Option>
@@ -313,7 +424,7 @@ export default function NewPlanPage() {
               </Select>
             </div>
             <div>
-              <Label>{t("newWorkout.muscleGroup")}</Label>
+              <Label style={{ display: "block", marginBottom: "0.35rem" }}>{t("newWorkout.muscleGroup")}</Label>
               <Select style={{ width: "100%" }} onChange={(e) => setNewExMuscleGroup(e.detail.selectedOption.value as string)}>
                 <Option value="" selected={!newExMuscleGroup}>{t("newWorkout.noneOption")}</Option>
                 <Option value="chest">{t("newWorkout.chest")}</Option>
