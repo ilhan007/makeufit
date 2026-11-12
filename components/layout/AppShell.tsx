@@ -20,6 +20,7 @@ import {
   Button,
   Icon,
   ShellBar,
+  ShellBarBranding,
   SideNavigation,
   SideNavigationItem,
 } from "@ui5/webcomponents-react";
@@ -109,17 +110,21 @@ export function AppShell({
         primaryTitle="MakeUFit"
         onLogoClick={() => router.push("/dashboard")}
         style={{ flexShrink: 0 }}
-        logo={
-          <Icon
-            name="physical-activity"
-            style={{ width: 28, height: 28, color: "#fff", cursor: "pointer" }}
+        branding={
+          <ShellBarBranding
             onClick={() => router.push("/dashboard")}
-          />
+            logo={
+              <Icon
+                name="physical-activity"
+                style={{ width: 28, height: 28, color: "#fff" }}
+              />
+            }
+          >
+            MakeUFit
+          </ShellBarBranding>
         }
         startButton={
-          isMobile ? (
-            <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
-          ) : undefined
+          <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
         }
         profile={
           <Avatar
