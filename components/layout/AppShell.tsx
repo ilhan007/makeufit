@@ -15,16 +15,16 @@ import "@ui5/webcomponents-icons/dist/manager.js";
 import "@ui5/webcomponents-icons/dist/group.js";
 import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
-import "@ui5/webcomponents-icons/dist/lightbulb.js";
-import "@ui5/webcomponents-icons/dist/weather-proofing.js";
+import "@ui5/webcomponents-icons/dist/light-mode.js";
+import "@ui5/webcomponents-icons/dist/dark-mode.js";
 import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
 import {
   Avatar,
   Button,
   ShellBar,
+  ShellBarItem,
   SideNavigation,
   SideNavigationItem,
-  ToggleButton,
 } from "@ui5/webcomponents-react";
 import type { ReactNode } from "react";
 
@@ -131,15 +131,6 @@ export function AppShell({
           ? <Button design="Transparent" icon="menu2" onClick={() => setNavOpen(o => !o)} />
           : undefined
         }
-        content={
-          <ToggleButton
-            design="Transparent"
-            icon={isDark ? "lightbulb" : "weather-proofing"}
-            pressed={isDark}
-            onClick={toggleTheme}
-            tooltip={isDark ? "Switch to Light" : "Switch to Dark"}
-          />
-        }
         profile={
           <Avatar
             initials={userImage ? undefined : initials}
@@ -152,7 +143,13 @@ export function AppShell({
           </Avatar>
         }
         onProfileClick={handleProfileClick}
-      />
+      >
+        <ShellBarItem
+          icon={isDark ? "light-mode" : "dark-mode"}
+          text={isDark ? "Light mode" : "Dark mode"}
+          onClick={toggleTheme}
+        />
+      </ShellBar>
 
       {menuOpen && createPortal(
         <div
