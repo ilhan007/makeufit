@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/db";
 import { athletePlans, plans } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -19,18 +19,19 @@ export async function GET() {
 
   const rows = await getDb()
     .select({
-      id: athletePlans.id,
+      id: sql<number>`min(${athletePlans.id})`,
       planId: plans.id,
       planName: plans.name,
       planDescription: plans.description,
       weeksCount: plans.weeksCount,
-      assignedBy: athletePlans.assignedBy,
-      startDate: athletePlans.startDate,
-      createdAt: athletePlans.createdAt,
+      assignedBy: sql<string | null>`min(${athletePlans.assignedBy})`,
+      startDate: sql<Date | null>`min(${athletePlans.startDate})`,
+      createdAt: sql<Date>`min(${athletePlans.createdAt})`,
     })
     .from(athletePlans)
     .innerJoin(plans, eq(plans.id, athletePlans.planId))
-    .where(eq(athletePlans.athleteId, session.user.id));
+    .where(eq(athletePlans.athleteId, session.user.id))
+    .groupBy(plans.id);
 
   return NextResponse.json(rows);
 }
@@ -49,6 +50,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Prevent duplicate enrollments
+  const [existing] = await getDb()
+    .select()
+    .from(athletePlans)
+    .where(and(eq(athletePlans.planId, parsed.data.planId), eq(athletePlans.athleteId, session.user.id)));
+  if (existing) return NextResponse.json(existing, { status: 200 });
+
   const [row] = await getDb()
     .insert(athletePlans)
     .values({
@@ -60,3 +68,4 @@ export async function POST(request: Request) {
 
   return NextResponse.json(row, { status: 201 });
 }
+

@@ -4,7 +4,7 @@ import { workouts, bodyMetrics } from "@/db/schema";
 import { eq, desc, gte, count, and } from "drizzle-orm";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
-import "@ui5/webcomponents-fiori/dist/illustrations/tnt/Avatar.js";
+import { WelcomeIllustration } from "@/components/WelcomeIllustration";
 import "@ui5/webcomponents-icons/dist/add.js";
 import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/manager.js";
@@ -13,7 +13,6 @@ import {
   Card,
   CardHeader,
   Icon,
-  IllustratedMessage,
   List,
   ListItemStandard,
   MessageStrip,
@@ -70,9 +69,7 @@ export default async function DashboardPage() {
           {/* Hero illustration */}
           <Card style={{ marginBottom: "1.5rem", textAlign: "center" }}>
             <div style={{ padding: "2rem 1rem 1rem" }}>
-              <IllustratedMessage
-                name="TntAvatar"
-                design="Auto"
+              <WelcomeIllustration
                 titleText="Welcome to MakeUFit!"
                 subtitleText="Your personal fitness companion. Track workouts, follow structured plans, and stay accountable with a coach."
               />

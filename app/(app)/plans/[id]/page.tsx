@@ -60,6 +60,7 @@ export default function PlanDetailPage() {
   const router = useRouter();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [userId, setUserId] = useState<string>("");
+  const [isFollowing, setIsFollowing] = useState(false);
   const [using, setUsing] = useState(false);
   const [used, setUsed] = useState(false);
   const [completing, setCompleting] = useState<number | null>(null); // sessionId being completed
@@ -86,6 +87,10 @@ export default function PlanDetailPage() {
         setPlan(hydrated);
       });
     fetch("/api/auth/session").then(r => r.json()).then(d => { if (d?.user?.id) setUserId(d.user.id); });
+    fetch("/api/my-plans").then(r => r.json()).then((rows: Array<{ planId: number }>) => {
+      const id = parseInt(String(params.id));
+      setIsFollowing(Array.isArray(rows) && rows.some(r => r.planId === id));
+    });
   }, [params.id]);
 
   function updateSet(sessionId: number, exerciseId: number, setNumber: number, field: "editReps" | "editWeight" | "editDuration", value: string) {
@@ -113,6 +118,7 @@ export default function PlanDetailPage() {
     });
     setUsing(false);
     setUsed(true);
+    setIsFollowing(true);
     setTimeout(() => router.push("/plans"), 800);
   }
 
@@ -184,8 +190,8 @@ export default function PlanDetailPage() {
             </Link>
           )}
           {isPublicNotOwner && (
-            <Button design="Emphasized" onClick={useThisPlan} disabled={using || used}>
-              {used ? "Added to My Plans!" : using ? "Adding..." : "Use This Plan"}
+            <Button design={isFollowing ? "Default" : "Emphasized"} onClick={useThisPlan} disabled={using || used || isFollowing}>
+              {isFollowing ? "Following" : used ? "Added to My Plans!" : using ? "Adding..." : "Use This Plan"}
             </Button>
           )}
         </FlexBox>

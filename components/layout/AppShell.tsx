@@ -5,6 +5,8 @@ import { signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRole } from "@/components/layout/RoleContext";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n/config";
 import "@ui5/webcomponents-icons/dist/home.js";
 import "@ui5/webcomponents-icons/dist/physical-activity.js";
 import "@ui5/webcomponents-icons/dist/bbyd-dashboard.js";
@@ -17,10 +19,9 @@ import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/menu2.js";
 import "@ui5/webcomponents-icons/dist/light-mode.js";
 import "@ui5/webcomponents-icons/dist/dark-mode.js";
-import "@ui5/webcomponents-icons/dist/text-align-left.js";
-import "@ui5/webcomponents-icons/dist/text-align-right.js";
+import "@ui5/webcomponents-icons/dist/world.js";
 import { setTheme } from "@ui5/webcomponents-base/dist/config/Theme.js";
-import applyDirection from "@ui5/webcomponents-base/dist/locale/applyDirection.js";
+import { setLanguage } from "@ui5/webcomponents-base/dist/config/Language.js";
 import {
   Avatar,
   Button,
@@ -30,15 +31,6 @@ import {
   SideNavigationItem,
 } from "@ui5/webcomponents-react";
 import type { ReactNode } from "react";
-
-const allNavItems = [
-  { text: "Dashboard", icon: "home", href: "/dashboard", roles: ["athlete", "coach", "both"] },
-  { text: "Workout History", icon: "physical-activity", href: "/workouts", roles: ["athlete", "coach", "both"] },
-  { text: "Workout Plans", icon: "document-text", href: "/plans", roles: ["athlete", "coach", "both"] },
-  { text: "Progress", icon: "bbyd-dashboard", href: "/metrics", roles: ["athlete", "coach", "both"] },
-  { text: "My Coach", icon: "manager", href: "/coach", roles: ["athlete", "both"] },
-  { text: "Athletes", icon: "group", href: "/athletes", roles: ["coach", "both"] },
-];
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -53,6 +45,7 @@ export function AppShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t, i18n } = useTranslation();
   const [unseenCount, setUnseenCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,9 +53,17 @@ export function AppShell({
   const [isMobile, setIsMobile] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [isRTL, setIsRTL] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { role } = useRole();
+
+  const allNavItems = [
+    { text: t("nav.dashboard"), icon: "home", href: "/dashboard", roles: ["athlete", "coach", "both"] },
+    { text: t("nav.workouts"), icon: "physical-activity", href: "/workouts", roles: ["athlete", "coach", "both"] },
+    { text: t("nav.plans"), icon: "document-text", href: "/plans", roles: ["athlete", "coach", "both"] },
+    { text: t("nav.metrics"), icon: "bbyd-dashboard", href: "/metrics", roles: ["athlete", "coach", "both"] },
+    { text: t("nav.coach"), icon: "manager", href: "/coach", roles: ["athlete", "both"] },
+    { text: t("nav.athletes"), icon: "group", href: "/athletes", roles: ["coach", "both"] },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -75,7 +76,6 @@ export function AppShell({
 
   useEffect(() => { setUnseenCount(0); }, [pathname]);
   useEffect(() => { setMenuOpen(false); }, [pathname]);
-  // Close nav on mobile when navigating
   useEffect(() => { if (isMobile) setNavOpen(false); }, [pathname, isMobile]);
 
   useEffect(() => {
@@ -117,17 +117,16 @@ export function AppShell({
     setIsDark(d => !d);
   }
 
-  async function toggleDirection() {
-    const next = isRTL ? "ltr" : "rtl";
-    document.body.dir = next;
-    await applyDirection();
-    setIsRTL(r => !r);
-  }
+  const toggleLang = async () => {
+    const next = i18n.language === "bg" ? "en" : "bg";
+    await i18n.changeLanguage(next);
+    await setLanguage(next === "bg" ? "bg" : "en");
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <ShellBar
-        primaryTitle="MakeUFit"
+        primaryTitle={t("shell.appTitle")}
         onLogoClick={() => router.push("/dashboard")}
         style={{ flexShrink: 0 }}
         logo={
@@ -137,7 +136,7 @@ export function AppShell({
               viewBox="0 0 24 24"
               style={{ width: 28, height: 28, fill: "currentColor" }}
             >
-              <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" transform="rotate(45 12 12)" />
+              <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" transform="rotate(-45 12 12)" />
             </svg>
           </span>
         }
@@ -160,13 +159,13 @@ export function AppShell({
       >
         <ShellBarItem
           icon={isDark ? "light-mode" : "dark-mode"}
-          text={isDark ? "Light mode" : "Dark mode"}
+          text={isDark ? t("shell.lightMode") : t("shell.darkMode")}
           onClick={toggleTheme}
         />
         <ShellBarItem
-          icon={isRTL ? "text-align-left" : "text-align-right"}
-          text={isRTL ? "Switch to LTR" : "Switch to RTL"}
-          onClick={toggleDirection}
+          icon="world"
+          text={t("shell.lang")}
+          onClick={toggleLang}
         />
       </ShellBar>
 
@@ -192,7 +191,7 @@ export function AppShell({
             onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            Profile
+            {t("shell.profile")}
           </button>
           <div style={{ height: 1, background: "#e2e8f0" }} />
           <button
@@ -201,14 +200,13 @@ export function AppShell({
             onMouseEnter={e => (e.currentTarget.style.background = "#fef2f2")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            Log Out
+            {t("shell.logout")}
           </button>
         </div>,
         document.body
       )}
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
-        {/* Mobile overlay */}
         {isMobile && navOpen && (
           <div
             onClick={() => setNavOpen(false)}
@@ -223,7 +221,6 @@ export function AppShell({
           width: 240,
           height: "100%",
           flexShrink: 0,
-          // On mobile: slide in/out as a drawer
           ...(isMobile ? {
             position: "fixed",
             top: 0,
@@ -271,3 +268,4 @@ const menuItemStyle: React.CSSProperties = {
   background: "transparent", border: "none", textAlign: "left",
   fontSize: "0.9rem", cursor: "pointer", color: "#1e293b",
 };
+
