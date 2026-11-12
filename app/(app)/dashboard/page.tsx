@@ -62,8 +62,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <Title level="H2" style={{ marginBottom: "1rem" }}>Dashboard</Title>
-
       {total === 0 ? (
         <div>
           {/* Hero illustration */}
