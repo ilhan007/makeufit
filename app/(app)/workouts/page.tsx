@@ -10,8 +10,6 @@ import {
   Button,
   Card,
   CardHeader,
-  FlexBox,
-  FlexBoxJustifyContent,
   Icon,
   List,
   ListItemCustom,
@@ -38,19 +36,14 @@ export default async function WorkoutsPage() {
 
   return (
     <div>
-      <FlexBox justifyContent={FlexBoxJustifyContent.SpaceBetween} style={{ marginBottom: "1.5rem", alignItems: "center" }}>
-        <Title level="H2">Workouts</Title>
-        <Link href="/workouts/new">
-          <Button design="Emphasized">New Workout</Button>
-        </Link>
-      </FlexBox>
+      <Title level="H2" style={{ marginBottom: "1.5rem" }}>Workout History</Title>
 
       <Card header={<CardHeader titleText={`${rows.length} session${rows.length !== 1 ? "s" : ""}`} />}>
         {rows.length === 0 ? (
           <EmptyState
             name="NoActivities"
             titleText="No workouts logged yet"
-            subtitleText="Hit New Workout to log your first session"
+            subtitleText="Complete a day in one of your plans to log a workout"
           />
         ) : (
           <List>
