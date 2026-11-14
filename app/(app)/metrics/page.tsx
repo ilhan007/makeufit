@@ -102,7 +102,9 @@ export default function MetricsPage() {
     setError("");
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { date: new Date(date).toISOString() };
+      const parsedDate = new Date(date);
+      const isoDate = isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
+      const body: Record<string, unknown> = { date: isoDate };
       if (weightKg) body.weightKg = parseFloat(weightKg);
       if (bodyFatPct) body.bodyFatPct = parseFloat(bodyFatPct);
       if (waistCm) body.waistCm = parseFloat(waistCm);

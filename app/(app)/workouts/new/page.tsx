@@ -221,10 +221,12 @@ export default function NewWorkoutPage() {
     setError("");
     setSaving(true);
     try {
+      const parsedDate = new Date(date);
+      const isoDate = isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
       const wRes = await fetch("/api/workouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), date: new Date(date).toISOString(), notes: notes.trim() || undefined }),
+        body: JSON.stringify({ name: name.trim(), date: isoDate, notes: notes.trim() || undefined }),
       });
       if (!wRes.ok) throw new Error("Failed to create workout");
       const workout = await wRes.json();
