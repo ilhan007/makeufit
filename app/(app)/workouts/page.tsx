@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { DeleteButton } from "@/components/DeleteButton";
 import "@ui5/webcomponents-icons/dist/copy.js";
 import {
+  BusyIndicator,
   Button,
   Card,
   CardHeader,
@@ -42,7 +43,9 @@ export default function WorkoutsPage() {
     return (
       <div>
         <Title level="H2" style={{ marginBottom: "1.5rem" }}>{t("workouts.title")}</Title>
-        <Card header={<CardHeader titleText={t("common.loading")} />} />
+        <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
+          <BusyIndicator active size="L" />
+        </div>
       </div>
     );
   }

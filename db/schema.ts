@@ -1,6 +1,18 @@
 import { sql } from "drizzle-orm";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+export const offlineAthletes = sqliteTable("offline_athletes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  coachId: text("coach_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   name: text("name"),
@@ -28,8 +40,9 @@ export const exercises = sqliteTable("exercises", {
 export const workouts = sqliteTable("workouts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  offlineAthleteId: integer("offline_athlete_id")
+    .references(() => offlineAthletes.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   notes: text("notes"),
   date: integer("date", { mode: "timestamp" }).notNull(),
@@ -80,8 +93,9 @@ export const coachRelationships = sqliteTable("coach_relationships", {
 export const bodyMetrics = sqliteTable("body_metrics", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  offlineAthleteId: integer("offline_athlete_id")
+    .references(() => offlineAthletes.id, { onDelete: "cascade" }),
   date: integer("date", { mode: "timestamp" }).notNull(),
   weightKg: real("weight_kg"),
   bodyFatPct: real("body_fat_pct"),
@@ -146,8 +160,9 @@ export const planSessionSets = sqliteTable("plan_session_sets", {
 export const athletePlans = sqliteTable("athlete_plans", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   athleteId: text("athlete_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  offlineAthleteId: integer("offline_athlete_id")
+    .references(() => offlineAthletes.id, { onDelete: "cascade" }),
   planId: integer("plan_id")
     .notNull()
     .references(() => plans.id, { onDelete: "cascade" }),

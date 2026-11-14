@@ -10,6 +10,7 @@ import "@ui5/webcomponents-icons/dist/add.js";
 import "@ui5/webcomponents-icons/dist/document-text.js";
 import "@ui5/webcomponents-icons/dist/manager.js";
 import {
+  BusyIndicator,
   Button,
   Card,
   CardHeader,
@@ -79,15 +80,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div>
-        <Card style={{ marginBottom: "1.5rem", textAlign: "center" }}>
-          <div style={{ padding: "2rem 1rem 1rem" }}>
-            <WelcomeIllustration
-              titleText={t("dashboard.welcome")}
-              subtitleText={t("common.loading")}
-            />
-          </div>
-        </Card>
+      <div style={{ display: "flex", justifyContent: "center", padding: "6rem" }}>
+        <BusyIndicator active size="L" />
       </div>
     );
   }

@@ -12,6 +12,7 @@
     "seed": "npx tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@libsql/client": "^0.18.0",
     "@ui5/webcomponents": "^2.28.1",
     "@ui5/webcomponents-base": "^2.28.1",

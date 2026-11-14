@@ -50,6 +50,34 @@
       "when": 1794500000000,
       "tag": "0006_plan_day_completions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1800000000000,
+      "tag": "0007_offline_athletes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1800000000001,
+      "tag": "0008_workouts_offline_athlete",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1800000000002,
+      "tag": "0009_body_metrics_offline_athlete",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1800000000003,
+      "tag": "0010_athlete_plans_offline",
+      "breakpoints": true
     }
   ]
 }
