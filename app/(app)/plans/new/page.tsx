@@ -26,7 +26,7 @@ import {
 
 type Exercise = { id: number; name: string; category: string; muscleGroup: string | null };
 type SetEntry = { tempId: number; setNumber: number; reps: string; weightKg: string; durationSeconds: string };
-type ExerciseEntry = { exercise: Exercise; sets: SetEntry[] };
+type ExerciseEntry = { exercise: Exercise; sets: SetEntry[]; rounds: string };
 type Session = { tempId: number; dayNumber: number; name: string; exercises: ExerciseEntry[] };
 
 let tempIdCounter = 0;
@@ -95,7 +95,7 @@ export default function NewPlanPage() {
     setSessions(prev => prev.map(s =>
       s.tempId !== pickerSessionTempId ? s : {
         ...s,
-        exercises: [...s.exercises, { exercise: ex, sets: [{ tempId: ++tempIdCounter, setNumber: 1, reps: "", weightKg: "", durationSeconds: "" }] }],
+        exercises: [...s.exercises, { exercise: ex, sets: [{ tempId: ++tempIdCounter, setNumber: 1, reps: "", weightKg: "", durationSeconds: "" }], rounds: "" }],
       }
     ));
     setPickerOpen(false);
@@ -158,6 +158,15 @@ export default function NewPlanPage() {
     ));
   }
 
+  function updateRounds(sessionTempId: number, exIdx: number, value: string) {
+    setSessions(prev => prev.map(s =>
+      s.tempId !== sessionTempId ? s : {
+        ...s,
+        exercises: s.exercises.map((e, i) => i !== exIdx ? e : { ...e, rounds: value }),
+      }
+    ));
+  }
+
   async function save() {
     if (!name.trim()) { setError(t("plans.nameRequired")); return; }
     if (sessions.length === 0) { setError(t("plans.sessionsRequired")); return; }
@@ -178,15 +187,22 @@ export default function NewPlanPage() {
           body: JSON.stringify({
             dayNumber: session.dayNumber,
             name: session.name,
-            exercises: session.exercises.map(e => ({
-              exerciseId: e.exercise.id,
-              sets: e.sets.filter(s => s.reps || s.durationSeconds).map(s => ({
-                setNumber: s.setNumber,
-                reps: s.reps ? parseInt(s.reps) : undefined,
-                weightKg: s.weightKg ? parseFloat(s.weightKg) : undefined,
-                durationSeconds: s.durationSeconds ? parseInt(s.durationSeconds) : undefined,
-              })),
-            })),
+            exercises: session.exercises.map(e => {
+                const roundCount = e.rounds ? parseInt(e.rounds) : 0;
+                const templateSet = e.sets[0];
+                const setsToSave = roundCount > 1
+                  ? Array.from({ length: roundCount }, (_, i) => ({ ...templateSet, setNumber: i + 1 }))
+                  : e.sets;
+                return {
+                  exerciseId: e.exercise.id,
+                  sets: setsToSave.filter(s => s.reps || s.durationSeconds).map(s => ({
+                    setNumber: s.setNumber,
+                    reps: s.reps ? parseInt(s.reps) : undefined,
+                    weightKg: s.weightKg ? parseFloat(s.weightKg) : undefined,
+                    durationSeconds: s.durationSeconds ? parseInt(s.durationSeconds) : undefined,
+                  })),
+                };
+              }),
           }),
         });
       }
@@ -300,37 +316,69 @@ export default function NewPlanPage() {
                         {entry.exercise.muscleGroup ? entry.exercise.muscleGroup.replace(/_/g, " ") : entry.exercise.category}
                       </Tag>
                     </div>
-                    <Button design="Transparent" onClick={() => removeExercise(session.tempId, exIdx)} style={{ padding: "0 0.25rem" }}>
-                      <Icon name="delete" style={{ fontSize: "0.875rem", color: "var(--sapNeutralTextColor)" }} />
-                    </Button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      {/* Rounds input */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                        <span style={{ fontSize: "0.75rem", color: "var(--sapNeutralTextColor)", whiteSpace: "nowrap" }}>Rounds:</span>
+                        <Input
+                          value={entry.rounds}
+                          onInput={(e: Ui5CustomEvent<InputDomRef>) => updateRounds(session.tempId, exIdx, e.target.value ?? "")}
+                          placeholder="—"
+                          type="Number"
+                          style={{ width: 56 }}
+                        />
+                      </div>
+                      <Button design="Transparent" onClick={() => removeExercise(session.tempId, exIdx)} style={{ padding: "0 0.25rem" }}>
+                        <Icon name="delete" style={{ fontSize: "0.875rem", color: "var(--sapNeutralTextColor)" }} />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Sets table */}
                   <div style={{ padding: "0.5rem 0.75rem" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.35rem" }}>
-                      {[t("workoutDetail.set"), t("workoutDetail.reps"), t("workoutDetail.weight"), t("workoutDetail.duration"), ""].map((h, i) => (
-                        <span key={i} style={{ fontSize: "0.7rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{h}</span>
-                      ))}
-                    </div>
-                    {entry.sets.map(set => (
-                      <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.3rem", alignItems: "center" }}>
-                        <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", textAlign: "center" }}>{set.setNumber}</Text>
-                        <Input value={set.reps} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "reps", e.target.value ?? "")} placeholder="—" />
-                        <Input value={set.weightKg} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "weightKg", e.target.value ?? "")} placeholder="—" />
-                        <Input value={set.durationSeconds} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "durationSeconds", e.target.value ?? "")} placeholder="—" />
-                        <button onClick={() => removeSet(session.tempId, exIdx, set.tempId)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--sapNeutralTextColor)", fontSize: "0.9rem", padding: 0 }}>✕</button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => addSet(session.tempId, exIdx)}
-                      style={{
-                        marginTop: "0.25rem", border: `1px dashed ${accent.accent}`, borderRadius: 6,
-                        background: "none", cursor: "pointer", padding: "0.25rem 0.75rem",
-                        fontSize: "0.8rem", color: accent.accent, fontFamily: "inherit",
-                      }}
-                    >
-                      + {t("newWorkout.addSet")}
-                    </button>
+                    {(() => {
+                      const roundCount = entry.rounds ? parseInt(entry.rounds) : 0;
+                      const isCircuit = roundCount > 1;
+                      const displaySets = isCircuit ? [entry.sets[0]] : entry.sets;
+                      return (
+                        <>
+                          {isCircuit && (
+                            <div style={{ marginBottom: "0.4rem", fontSize: "0.75rem", color: accent.accent, fontWeight: 600 }}>
+                              Template set — will repeat × {roundCount} rounds on save
+                            </div>
+                          )}
+                          <div style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.35rem" }}>
+                            {[t("workoutDetail.set"), t("workoutDetail.reps"), t("workoutDetail.weight"), t("workoutDetail.duration"), ""].map((h, i) => (
+                              <span key={i} style={{ fontSize: "0.7rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{h}</span>
+                            ))}
+                          </div>
+                          {displaySets.map((set, setDisplayIdx) => (
+                            <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.3rem", alignItems: "center" }}>
+                              <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", textAlign: "center" }}>{isCircuit ? "×" + roundCount : set.setNumber}</Text>
+                              <Input value={set.reps} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "reps", e.target.value ?? "")} placeholder="—" />
+                              <Input value={set.weightKg} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "weightKg", e.target.value ?? "")} placeholder="—" />
+                              <Input value={set.durationSeconds} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "durationSeconds", e.target.value ?? "")} placeholder="—" />
+                              {!isCircuit && (
+                                <button onClick={() => removeSet(session.tempId, exIdx, set.tempId)} style={{ border: "none", background: "none", cursor: "pointer", color: "var(--sapNeutralTextColor)", fontSize: "0.9rem", padding: 0 }}>✕</button>
+                              )}
+                              {isCircuit && <span />}
+                            </div>
+                          ))}
+                          {!isCircuit && (
+                            <button
+                              onClick={() => addSet(session.tempId, exIdx)}
+                              style={{
+                                marginTop: "0.25rem", border: `1px dashed ${accent.accent}`, borderRadius: 6,
+                                background: "none", cursor: "pointer", padding: "0.25rem 0.75rem",
+                                fontSize: "0.8rem", color: accent.accent, fontFamily: "inherit",
+                              }}
+                            >
+                              + {t("newWorkout.addSet")}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
