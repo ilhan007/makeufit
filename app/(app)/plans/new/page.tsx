@@ -352,7 +352,7 @@ export default function NewPlanPage() {
                               <span key={i} style={{ fontSize: "0.7rem", color: "var(--sapNeutralTextColor)", fontWeight: 600 }}>{h}</span>
                             ))}
                           </div>
-                          {displaySets.map((set, setDisplayIdx) => (
+                          {displaySets.map((set) => (
                             <div key={set.tempId} style={{ display: "grid", gridTemplateColumns: "2.5rem 1fr 1fr 1fr 2rem", gap: "0.4rem", marginBottom: "0.3rem", alignItems: "center" }}>
                               <Text style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", textAlign: "center" }}>{isCircuit ? "×" + roundCount : set.setNumber}</Text>
                               <Input value={set.reps} onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSet(session.tempId, exIdx, set.tempId, "reps", e.target.value ?? "")} placeholder="—" />
