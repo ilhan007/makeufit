@@ -184,6 +184,7 @@ export default function NewPlanPage() {
           body: JSON.stringify({
             dayNumber: session.dayNumber,
             name: session.name,
+            rounds: session.rounds ? parseInt(session.rounds) : undefined,
             exercises: session.exercises.map(e => {
                 const roundCount = session.rounds ? parseInt(session.rounds) : 0;
                 const templateSet = e.sets[0];

@@ -31,6 +31,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       dayNumber: planSessions.dayNumber,
       sessionName: planSessions.name,
       sessionNotes: planSessions.notes,
+      sessionRounds: planSessions.rounds,
       sessionOrder: planSessions.orderIndex,
       pseId: planSessionExercises.id,
       exerciseId: exercises.id,
@@ -53,13 +54,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   // Group into sessions → exercises → sets
   const sessionMap = new Map<number, {
-    id: number; dayNumber: number; name: string; notes: string | null;
+    id: number; dayNumber: number; name: string; notes: string | null; rounds: number | null;
     exercises: Map<number, { id: number; exerciseId: number; name: string; category: string; muscleGroup: string | null; sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }> }>;
   }>();
 
   for (const row of rows) {
     if (!sessionMap.has(row.sessionId)) {
-      sessionMap.set(row.sessionId, { id: row.sessionId, dayNumber: row.dayNumber, name: row.sessionName, notes: row.sessionNotes, exercises: new Map() });
+      sessionMap.set(row.sessionId, { id: row.sessionId, dayNumber: row.dayNumber, name: row.sessionName, notes: row.sessionNotes, rounds: row.sessionRounds ?? null, exercises: new Map() });
     }
     const sess = sessionMap.get(row.sessionId)!;
     if (row.pseId !== null && !sess.exercises.has(row.pseId)) {
@@ -76,6 +77,29 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }));
 
   return NextResponse.json({ ...plan, sessions });
+}
+
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const id = parseInt(params.id);
+  const [plan] = await getDb().select().from(plans).where(and(eq(plans.id, id), eq(plans.authorId, session.user.id)));
+  if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await request.json();
+  const updated = await getDb()
+    .update(plans)
+    .set({
+      name: body.name ?? plan.name,
+      description: body.description ?? plan.description,
+      weeksCount: body.weeksCount ?? plan.weeksCount,
+      isPublic: body.isPublic ?? plan.isPublic,
+    })
+    .where(eq(plans.id, id))
+    .returning();
+
+  return NextResponse.json(updated[0]);
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

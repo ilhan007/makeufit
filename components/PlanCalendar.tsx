@@ -30,6 +30,7 @@ export type Session = {
   dayNumber: number;
   name: string;
   notes: string | null;
+  rounds: number | null;
   exercises: ExerciseData[];
 };
 
@@ -102,10 +103,9 @@ export function ExerciseChips({
   accentColor?: string;
   accentBg?: string;
 }) {
-  const headerBg = accentBg ?? "var(--sapHighlightColor, #e8f4ff)";
-  const headerBorder = accentColor
-    ? `${accentColor}40`
-    : "var(--sapTileBorderColor)";
+  const headerBg = accentBg ?? "#f8f9fa";
+  const headerBorder = accentColor ? `${accentColor}40` : "#e0e0e0";
+  const headerTextColor = accentColor ? accentColor : "var(--sapTextColor)";
   if (exercises.length === 0) return null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -132,7 +132,7 @@ export function ExerciseChips({
               style={{
                 fontWeight: 700,
                 fontSize: "0.875rem",
-                color: "var(--sapTextColor)",
+                color: headerTextColor,
               }}
             >
               {ex.name}
@@ -500,10 +500,17 @@ export function PlanCalendar({
               </div>
 
               {selectedPlanSession && (
-                <ExerciseChips
-                  exercises={selectedPlanSession.exercises}
-                  repsLabel={t("workoutDetail.reps").toLowerCase()}
-                />
+                <>
+                  {selectedPlanSession.rounds != null && selectedPlanSession.rounds > 1 && (
+                    <div style={{ marginBottom: "0.5rem", padding: "0.3rem 0.75rem", borderRadius: 6, background: "#eef4ff", border: "1px solid #3b82f655", fontSize: "0.8rem", color: "#1d4ed8", fontWeight: 600 }}>
+                      Circuit · {selectedPlanSession.rounds} rounds
+                    </div>
+                  )}
+                  <ExerciseChips
+                    exercises={selectedPlanSession.exercises}
+                    repsLabel={t("workoutDetail.reps").toLowerCase()}
+                  />
+                </>
               )}
 
               {!canComplete && !isCompleted && !isPast && (

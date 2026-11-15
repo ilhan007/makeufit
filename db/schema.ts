@@ -129,6 +129,7 @@ export const planSessions = sqliteTable("plan_sessions", {
   dayNumber: integer("day_number").notNull(), // 1, 2, 3, ...
   name: text("name").notNull(),
   notes: text("notes"),
+  rounds: integer("rounds"),
   orderIndex: integer("order_index").notNull().default(0),
 });
 
