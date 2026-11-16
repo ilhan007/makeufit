@@ -156,6 +156,7 @@
     "addDay": "+ Add Day",
     "addRestDay": "+ Add Rest Day",
     "savePlan": "Save Plan",
+    "editPlan": "Edit Plan",
     "nameRequired": "Plan name is required.",
     "sessionsRequired": "Add at least one session."
   },
