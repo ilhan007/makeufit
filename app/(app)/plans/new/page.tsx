@@ -464,6 +464,9 @@ export default function NewPlanPage() {
                 <Option value="arms">{t("newWorkout.arms")}</Option>
                 <Option value="core">{t("newWorkout.core")}</Option>
                 <Option value="full_body">{t("newWorkout.fullBody")}</Option>
+                <Option value="running">{t("newWorkout.running")}</Option>
+                <Option value="cycling">{t("newWorkout.cycling")}</Option>
+                <Option value="cardio_general">{t("newWorkout.cardioGeneral")}</Option>
               </Select>
             </div>
           </div>
