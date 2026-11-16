@@ -1,0 +1,1 @@
+ALTER TABLE plan_sessions ADD COLUMN is_rest INTEGER DEFAULT 0;

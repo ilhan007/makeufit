@@ -32,6 +32,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       sessionName: planSessions.name,
       sessionNotes: planSessions.notes,
       sessionRounds: planSessions.rounds,
+      sessionIsRest: planSessions.isRest,
       sessionOrder: planSessions.orderIndex,
       pseId: planSessionExercises.id,
       exerciseId: exercises.id,
@@ -54,13 +55,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   // Group into sessions → exercises → sets
   const sessionMap = new Map<number, {
-    id: number; dayNumber: number; name: string; notes: string | null; rounds: number | null;
+    id: number; dayNumber: number; name: string; notes: string | null; rounds: number | null; isRest: boolean;
     exercises: Map<number, { id: number; exerciseId: number; name: string; category: string; muscleGroup: string | null; sets: Array<{ setNumber: number; reps: number | null; weightKg: number | null; durationSeconds: number | null }> }>;
   }>();
 
   for (const row of rows) {
     if (!sessionMap.has(row.sessionId)) {
-      sessionMap.set(row.sessionId, { id: row.sessionId, dayNumber: row.dayNumber, name: row.sessionName, notes: row.sessionNotes, rounds: row.sessionRounds ?? null, exercises: new Map() });
+      sessionMap.set(row.sessionId, { id: row.sessionId, dayNumber: row.dayNumber, name: row.sessionName, notes: row.sessionNotes, rounds: row.sessionRounds ?? null, isRest: row.sessionIsRest ?? false, exercises: new Map() });
     }
     const sess = sessionMap.get(row.sessionId)!;
     if (row.pseId !== null && !sess.exercises.has(row.pseId)) {

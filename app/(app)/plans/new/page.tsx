@@ -27,7 +27,7 @@ import {
 type Exercise = { id: number; name: string; category: string; muscleGroup: string | null };
 type SetEntry = { tempId: number; setNumber: number; reps: string; weightKg: string; durationSeconds: string };
 type ExerciseEntry = { exercise: Exercise; sets: SetEntry[] };
-type Session = { tempId: number; dayNumber: number; name: string; rounds: string; exercises: ExerciseEntry[] };
+type Session = { tempId: number; dayNumber: number; name: string; rounds: string; isRest: boolean; exercises: ExerciseEntry[] };
 
 let tempIdCounter = 0;
 
@@ -73,7 +73,12 @@ export default function NewPlanPage() {
 
   function addSession() {
     const nextDay = sessions.length > 0 ? Math.max(...sessions.map(s => s.dayNumber)) + 1 : 1;
-    setSessions(prev => [...prev, { tempId: ++tempIdCounter, dayNumber: nextDay, name: t("plans.day", { number: nextDay }), rounds: "", exercises: [] }]);
+    setSessions(prev => [...prev, { tempId: ++tempIdCounter, dayNumber: nextDay, name: t("plans.day", { number: nextDay }), rounds: "", isRest: false, exercises: [] }]);
+  }
+
+  function addRestDay() {
+    const nextDay = sessions.length > 0 ? Math.max(...sessions.map(s => s.dayNumber)) + 1 : 1;
+    setSessions(prev => [...prev, { tempId: ++tempIdCounter, dayNumber: nextDay, name: t("plans.restDay"), rounds: "", isRest: true, exercises: [] }]);
   }
 
   function removeSession(tempId: number) {
@@ -184,8 +189,9 @@ export default function NewPlanPage() {
           body: JSON.stringify({
             dayNumber: session.dayNumber,
             name: session.name,
+            isRest: session.isRest || undefined,
             rounds: session.rounds ? parseInt(session.rounds) : undefined,
-            exercises: session.exercises.map(e => {
+            exercises: session.isRest ? [] : session.exercises.map(e => {
                 const roundCount = session.rounds ? parseInt(session.rounds) : 0;
                 const templateSet = e.sets[0];
                 const setsToSave = roundCount > 1
@@ -262,7 +268,9 @@ export default function NewPlanPage() {
 
       {/* Day session cards */}
       {sessions.map((session, sessionIndex) => {
-        const accent = DAY_ACCENTS[sessionIndex % DAY_ACCENTS.length];
+        const accent = session.isRest
+          ? { bg: "#f5f5f5", accent: "#9e9e9e" }
+          : DAY_ACCENTS[sessionIndex % DAY_ACCENTS.length];
         return (
           <Card key={session.tempId} style={{ marginBottom: "1rem", borderRadius: 12, overflow: "hidden" }}>
             {/* Colored day header */}
@@ -286,17 +294,19 @@ export default function NewPlanPage() {
                   onInput={(e: Ui5CustomEvent<InputDomRef>) => updateSessionName(session.tempId, e.target.value ?? "")}
                   style={{ minWidth: 160, background: "transparent" }}
                 />
-                {/* Rounds — belongs to the whole day session */}
-                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginLeft: "0.5rem" }}>
-                  <span style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", whiteSpace: "nowrap" }}>Rounds:</span>
-                  <Input
-                    value={session.rounds}
-                    onInput={(e: Ui5CustomEvent<InputDomRef>) => updateRounds(session.tempId, e.target.value ?? "")}
-                    placeholder="—"
-                    type="Number"
-                    style={{ width: 60 }}
-                  />
-                </div>
+                {/* Rounds — only for non-rest days */}
+                {!session.isRest && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginLeft: "0.5rem" }}>
+                    <span style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)", whiteSpace: "nowrap" }}>Rounds:</span>
+                    <Input
+                      value={session.rounds}
+                      onInput={(e: Ui5CustomEvent<InputDomRef>) => updateRounds(session.tempId, e.target.value ?? "")}
+                      placeholder="—"
+                      type="Number"
+                      style={{ width: 60 }}
+                    />
+                  </div>
+                )}
               </div>
               <Button design="Transparent" onClick={() => removeSession(session.tempId)}>
                 <Icon name="delete" style={{ color: "var(--sapNegativeTextColor)" }} />
@@ -310,6 +320,13 @@ export default function NewPlanPage() {
                 </div>
               )}
               {/* Exercise blocks */}
+              {session.isRest ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 0", color: "var(--sapNeutralTextColor)" }}>
+                  <span style={{ fontSize: "1.25rem" }}>😴</span>
+                  <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.875rem" }}>{t("plans.restDay")}</Text>
+                </div>
+              ) : (
+              <>
               {session.exercises.map((entry, exIdx) => (
                 <div key={entry.exercise.id + "-" + exIdx} style={{
                   marginBottom: "0.75rem", borderRadius: 8,
@@ -380,26 +397,44 @@ export default function NewPlanPage() {
                 <Icon name="add" style={{ fontSize: "0.875rem", color: accent.accent }} />
                 {t("newWorkout.addExercise")}
               </button>
+              </>
+              )}
             </div>
           </Card>
         );
       })}
 
-      {/* Add Day button */}
-      <button
-        onClick={addSession}
-        style={{
-          width: "100%", padding: "0.85rem", borderRadius: 12, marginBottom: "1rem",
-          border: "2px dashed var(--sapTileBorderColor)",
-          background: "none", cursor: "pointer",
-          color: "var(--sapNeutralTextColor)", fontFamily: "inherit",
-          fontSize: "0.95rem", fontWeight: 600,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-        }}
-      >
-        <Icon name="add" style={{ fontSize: "1rem", color: "var(--sapNeutralTextColor)" }} />
-        {t("plans.addDay")}
-      </button>
+      {/* Add Day / Add Rest Day buttons */}
+      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}>
+        <button
+          onClick={addSession}
+          style={{
+            flex: 1, padding: "0.85rem", borderRadius: 12,
+            border: "2px dashed var(--sapTileBorderColor)",
+            background: "none", cursor: "pointer",
+            color: "var(--sapNeutralTextColor)", fontFamily: "inherit",
+            fontSize: "0.95rem", fontWeight: 600,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
+        >
+          <Icon name="add" style={{ fontSize: "1rem", color: "var(--sapNeutralTextColor)" }} />
+          {t("plans.addDay")}
+        </button>
+        <button
+          onClick={addRestDay}
+          style={{
+            flex: 1, padding: "0.85rem", borderRadius: 12,
+            border: "2px dashed #9e9e9e88",
+            background: "none", cursor: "pointer",
+            color: "#757575", fontFamily: "inherit",
+            fontSize: "0.95rem", fontWeight: 600,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
+        >
+          <span style={{ fontSize: "1rem" }}>😴</span>
+          {t("plans.addRestDay")}
+        </button>
+      </div>
 
       {/* Sticky bottom action bar */}
       <div style={{

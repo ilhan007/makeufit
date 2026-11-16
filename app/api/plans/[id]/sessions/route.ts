@@ -13,6 +13,7 @@ const addSessionSchema = z.object({
   name: z.string().min(1).max(100),
   notes: z.string().max(1000).optional(),
   rounds: z.number().int().min(1).optional(),
+  isRest: z.boolean().optional(),
   exercises: z.array(z.object({
     exerciseId: z.number().int().positive(),
     sets: z.array(z.object({
@@ -38,7 +39,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const [ps] = await getDb()
     .insert(planSessions)
-    .values({ planId, dayNumber: parsed.data.dayNumber, name: parsed.data.name, notes: parsed.data.notes, rounds: parsed.data.rounds ?? null, orderIndex: parsed.data.dayNumber - 1 })
+    .values({ planId, dayNumber: parsed.data.dayNumber, name: parsed.data.name, notes: parsed.data.notes, rounds: parsed.data.rounds ?? null, isRest: parsed.data.isRest ?? false, orderIndex: parsed.data.dayNumber - 1 })
     .returning();
 
   for (let i = 0; i < parsed.data.exercises.length; i++) {

@@ -130,6 +130,7 @@ export const planSessions = sqliteTable("plan_sessions", {
   name: text("name").notNull(),
   notes: text("notes"),
   rounds: integer("rounds"),
+  isRest: integer("is_rest", { mode: "boolean" }).default(false),
   orderIndex: integer("order_index").notNull().default(0),
 });
 

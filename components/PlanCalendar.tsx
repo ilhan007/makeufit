@@ -31,6 +31,7 @@ export type Session = {
   name: string;
   notes: string | null;
   rounds: number | null;
+  isRest: boolean;
   exercises: ExerciseData[];
 };
 
@@ -416,11 +417,11 @@ export function PlanCalendar({
                     height: 5,
                     borderRadius: "50%",
                     marginTop: 3,
-                    background: isSelected
-                      ? "#fff"
-                      : isPastDay
-                      ? "var(--sapCriticalColor, #e9730c)"
-                      : "var(--sapNeutralColor, #8a8b8c)",
+                    background: (() => {
+                      const sess = plan.sessions.find(s => s.dayNumber === dn);
+                      if (sess?.isRest) return "var(--sapNeutralColor, #8a8b8c)";
+                      return isSelected ? "#fff" : isPastDay ? "var(--sapCriticalColor, #e9730c)" : "var(--sapNeutralColor, #8a8b8c)";
+                    })(),
                   }}
                 />
               )}
@@ -480,6 +481,8 @@ export function PlanCalendar({
                   <Tag design="Set2" colorScheme="8">
                     {t("plans.completed")}
                   </Tag>
+                ) : selectedPlanSession?.isRest ? (
+                  <Tag design="Set2" colorScheme="1">{t("plans.restDay")}</Tag>
                 ) : (
                   <Button
                     design="Emphasized"
@@ -499,7 +502,14 @@ export function PlanCalendar({
                 )}
               </div>
 
-              {selectedPlanSession && (
+              {selectedPlanSession?.isRest ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 0", color: "var(--sapNeutralTextColor)" }}>
+                  <span style={{ fontSize: "1.5rem" }}>😴</span>
+                  <Text style={{ color: "var(--sapNeutralTextColor)", fontSize: "0.9rem" }}>
+                    {t("plans.restDay")}
+                  </Text>
+                </div>
+              ) : selectedPlanSession && (
                 <>
                   {selectedPlanSession.rounds != null && selectedPlanSession.rounds > 1 && (
                     <div style={{ marginBottom: "0.5rem", padding: "0.3rem 0.75rem", borderRadius: 6, background: "#eef4ff", border: "1px solid #3b82f655", fontSize: "0.8rem", color: "#1d4ed8", fontWeight: 600 }}>

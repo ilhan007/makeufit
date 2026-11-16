@@ -154,6 +154,7 @@
     "makePublic": "Make public (visible to all athletes)",
     "sessionName": "Session Name",
     "addDay": "+ Add Day",
+    "addRestDay": "+ Add Rest Day",
     "savePlan": "Save Plan",
     "nameRequired": "Plan name is required.",
     "sessionsRequired": "Add at least one session."
