@@ -27,19 +27,18 @@ type Plan = {
   sessionCount: number;
 };
 
-type FollowedPlan = {
-  id: number;
+type Enrollment = {
+  id: number;       // enrollment id
   planId: number;
-  planName: string;
-  planDescription: string | null;
-  weeksCount: number;
 };
 
 export default function PlansPage() {
   const { t } = useTranslation();
   const [myPlans, setMyPlans] = useState<Plan[]>([]);
-  const [followedPlans, setFollowedPlans] = useState<FollowedPlan[]>([]);
   const [publicPlans, setPublicPlans] = useState<Plan[]>([]);
+  // map of planId → enrollmentId
+  const [enrollments, setEnrollments] = useState<Map<number, number>>(new Map());
+  const [enrolling, setEnrolling] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -51,16 +50,71 @@ export default function PlansPage() {
       const uid = session?.user?.id ?? "";
       const authored: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.authorId === uid) : [];
       const pub: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.isPublic && p.authorId !== uid) : [];
-      const followed: FollowedPlan[] = Array.isArray(myPlanRows) ? myPlanRows : [];
-      // Keep all enrollments in Following — including own plans the user started
+      const map = new Map<number, number>();
+      if (Array.isArray(myPlanRows)) {
+        (myPlanRows as Enrollment[]).forEach(e => map.set(e.planId, e.id));
+      }
       setMyPlans(authored);
       setPublicPlans(pub);
-      setFollowedPlans(followed);
+      setEnrollments(map);
       setLoaded(true);
     });
   }, []);
 
-  const hasAny = myPlans.length > 0 || followedPlans.length > 0 || publicPlans.length > 0;
+  async function startPlan(planId: number) {
+    setEnrolling(planId);
+    const res = await fetch("/api/my-plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId }),
+    });
+    const row = await res.json();
+    setEnrollments(prev => new Map(prev).set(planId, row.id));
+    setEnrolling(null);
+  }
+
+  async function stopPlan(planId: number) {
+    const enrollmentId = enrollments.get(planId);
+    if (!enrollmentId) return;
+    if (!confirm(t("plans.confirmUnfollow"))) return;
+    await fetch(`/api/my-plans/${enrollmentId}`, { method: "DELETE" });
+    setEnrollments(prev => { const m = new Map(prev); m.delete(planId); return m; });
+  }
+
+  const hasAny = myPlans.length > 0 || publicPlans.length > 0;
+
+  const renderPlan = (p: Plan) => {
+    const enrolled = enrollments.has(p.id);
+    return (
+      <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "0.75rem" }}>
+          <Link href={`/plans/${p.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem", flexWrap: "wrap" }}>
+              <span style={{ fontWeight: 600, color: "var(--sapTextColor)" }}>{p.name}</span>
+              {p.isPublic && <Tag design="Set2" colorScheme="8" style={{ fontSize: "0.7rem" }}>{t("plans.public")}</Tag>}
+              {enrolled && <Tag design="Set2" colorScheme="5" style={{ fontSize: "0.7rem" }}>{t("plans.alreadyFollowing")}</Tag>}
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
+              {p.sessionCount} session{p.sessionCount !== 1 ? "s" : ""} · {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
+              {p.description && ` · ${p.description}`}
+            </div>
+          </Link>
+          <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+            {enrolled ? (
+              <Button design="Transparent" onClick={() => stopPlan(p.id)}>
+                {t("plans.unfollow")}
+              </Button>
+            ) : (
+              <Button design="Default" onClick={() => startPlan(p.id)} disabled={enrolling === p.id}>
+                {enrolling === p.id ? t("plans.addingPlan") : t("plans.startPlan")}
+              </Button>
+            )}
+            <DeleteButton url={`/api/plans/${p.id}`} label={t("plans.delete")} onDeleted={() => setMyPlans(prev => prev.filter(x => x.id !== p.id))} />
+          </div>
+        </div>
+      </ListItemCustom>
+    );
+  };
 
   return (
     <div>
@@ -84,53 +138,7 @@ export default function PlansPage() {
       {myPlans.length > 0 && (
         <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.myPlans")}</div>} style={{ marginBottom: "1.5rem" }}>
           <List>
-            {myPlans.map(p => (
-              <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
-                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <Link href={`/plans/${p.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
-                      <span style={{ fontWeight: 600, color: "var(--sapTextColor)" }}>{p.name}</span>
-                      {p.isPublic && <Tag design="Set2" colorScheme="8" style={{ fontSize: "0.7rem" }}>{t("plans.public")}</Tag>}
-                    </div>
-                    <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
-                      {p.sessionCount} session{p.sessionCount !== 1 ? "s" : ""} · {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
-                      {p.description && ` · ${p.description}`}
-                    </div>
-                  </Link>
-                  <DeleteButton url={`/api/plans/${p.id}`} label={t("plans.delete")} onDeleted={() => setMyPlans(prev => prev.filter(x => x.id !== p.id))} />
-                </div>
-              </ListItemCustom>
-            ))}
-          </List>
-        </Card>
-      )}
-
-      {followedPlans.length > 0 && (
-        <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.following")}</div>} style={{ marginBottom: "1.5rem" }}>
-          <List>
-            {followedPlans.map(p => (
-              <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
-                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                  <Link href={`/plans/${p.planId}`} style={{ textDecoration: "none", flex: 1, minWidth: 0, display: "block" }}>
-                    <div style={{ fontWeight: 600, color: "var(--sapTextColor)", marginBottom: "0.2rem" }}>{p.planName}</div>
-                    <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
-                      {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
-                      {p.planDescription && ` · ${p.planDescription}`}
-                    </div>
-                  </Link>
-                  <Button
-                    design="Transparent"
-                    onClick={async () => {
-                      if (!confirm(t("plans.confirmUnfollow"))) return;
-                      await fetch(`/api/my-plans/${p.id}`, { method: "DELETE" });
-                      setFollowedPlans(prev => prev.filter(x => x.id !== p.id));
-                    }}
-                  >
-                    {t("plans.unfollow")}
-                  </Button>
-                </div>
-              </ListItemCustom>
-            ))}
+            {myPlans.map(renderPlan)}
           </List>
         </Card>
       )}
@@ -138,17 +146,36 @@ export default function PlansPage() {
       {publicPlans.length > 0 && (
         <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.publicPlans")}</div>}>
           <List>
-            {publicPlans.map(p => (
-              <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
-                <Link href={`/plans/${p.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0, display: "block" }}>
-                  <div style={{ fontWeight: 600, color: "var(--sapTextColor)", marginBottom: "0.2rem" }}>{p.name}</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
-                    {p.sessionCount} session{p.sessionCount !== 1 ? "s" : ""} · {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
-                    {p.description && ` · ${p.description}`}
+            {publicPlans.map(p => {
+              const enrolled = enrollments.has(p.id);
+              return (
+                <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", width: "100%", gap: "0.75rem" }}>
+                    <Link href={`/plans/${p.id}`} style={{ textDecoration: "none", flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem", flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 600, color: "var(--sapTextColor)" }}>{p.name}</span>
+                        {enrolled && <Tag design="Set2" colorScheme="5" style={{ fontSize: "0.7rem" }}>{t("plans.alreadyFollowing")}</Tag>}
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
+                        {p.sessionCount} session{p.sessionCount !== 1 ? "s" : ""} · {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
+                        {p.description && ` · ${p.description}`}
+                      </div>
+                    </Link>
+                    <div style={{ flexShrink: 0 }}>
+                      {enrolled ? (
+                        <Button design="Transparent" onClick={() => stopPlan(p.id)}>
+                          {t("plans.unfollow")}
+                        </Button>
+                      ) : (
+                        <Button design="Default" onClick={() => startPlan(p.id)} disabled={enrolling === p.id}>
+                          {enrolling === p.id ? t("plans.addingPlan") : t("plans.startPlan")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </Link>
-              </ListItemCustom>
-            ))}
+                </ListItemCustom>
+              );
+            })}
           </List>
         </Card>
       )}
