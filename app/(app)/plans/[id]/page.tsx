@@ -164,7 +164,7 @@ export default function PlanDetailPage() {
   );
 
   const isOwner = plan.authorId === userId;
-  const isFollowerNotOwner = !isOwner && isFollowing;
+  const isEnrolled = isFollowing; // both owners and non-owners can enroll
 
   return (
     <div>
@@ -189,19 +189,19 @@ export default function PlanDetailPage() {
               <Button>{t("plans.edit")}</Button>
             </Link>
           )}
-          {!isOwner && !isFollowing && (
+          {!isEnrolled && (
             <Button design="Emphasized" onClick={useThisPlan} disabled={using || used}>
               {used ? t("plans.addedPlan") : using ? t("plans.addingPlan") : t("plans.startPlan")}
             </Button>
           )}
-          {isFollowerNotOwner && !used && (
+          {isEnrolled && !used && (
             <Tag design="Set2" colorScheme="8">{t("plans.alreadyFollowing")}</Tag>
           )}
         </FlexBox>
       </FlexBox>
 
-      {/* Follower: calendar view */}
-      {isFollowerNotOwner && enrollment && (
+      {/* Enrolled: calendar view (owner or follower) */}
+      {isEnrolled && enrollment && (
         <Card
           header={<CardHeader titleText={t("plans.yourProgress")} subtitleText={`${enrollment.completions.length} / ${enrollment.sessions.length} ${t("plans.daysCompleted")}`} />}
           style={{ marginBottom: "1.5rem" }}
