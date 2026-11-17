@@ -217,8 +217,8 @@ export default function PlanDetailPage() {
         </Card>
       )}
 
-      {/* Owner: sessions list with complete buttons */}
-      {isOwner && (
+      {/* Owner: sessions list — only shown when not enrolled */}
+      {isOwner && !isEnrolled && (
         <div style={{ marginTop: "1.5rem" }}>
           {plan.sessions.length === 0 ? (
             <Card>
