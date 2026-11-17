@@ -28,6 +28,7 @@ type Plan = {
 };
 
 type FollowedPlan = {
+  id: number;
   planId: number;
   planName: string;
   planDescription: string | null;
@@ -51,11 +52,10 @@ export default function PlansPage() {
       const authored: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.authorId === uid) : [];
       const pub: Plan[] = Array.isArray(plans) ? plans.filter((p: Plan) => p.isPublic && p.authorId !== uid) : [];
       const followed: FollowedPlan[] = Array.isArray(myPlanRows) ? myPlanRows : [];
-      // Remove from followed any plans the user authored
-      const followedFiltered = followed.filter(f => !authored.some(a => a.id === f.planId));
+      // Keep all enrollments in Following — including own plans the user started
       setMyPlans(authored);
       setPublicPlans(pub);
-      setFollowedPlans(followedFiltered);
+      setFollowedPlans(followed);
       setLoaded(true);
     });
   }, []);
@@ -109,14 +109,26 @@ export default function PlansPage() {
         <Card header={<div style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{t("plans.following")}</div>} style={{ marginBottom: "1.5rem" }}>
           <List>
             {followedPlans.map(p => (
-              <ListItemCustom key={p.planId} style={{ padding: "0.75rem 1rem" }}>
-                <Link href={`/plans/${p.planId}`} style={{ textDecoration: "none", flex: 1, minWidth: 0, display: "block" }}>
-                  <div style={{ fontWeight: 600, color: "var(--sapTextColor)", marginBottom: "0.2rem" }}>{p.planName}</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
-                    {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
-                    {p.planDescription && ` · ${p.planDescription}`}
-                  </div>
-                </Link>
+              <ListItemCustom key={p.id} style={{ padding: "0.75rem 1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                  <Link href={`/plans/${p.planId}`} style={{ textDecoration: "none", flex: 1, minWidth: 0, display: "block" }}>
+                    <div style={{ fontWeight: 600, color: "var(--sapTextColor)", marginBottom: "0.2rem" }}>{p.planName}</div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--sapNeutralTextColor)" }}>
+                      {p.weeksCount} week{p.weeksCount !== 1 ? "s" : ""}
+                      {p.planDescription && ` · ${p.planDescription}`}
+                    </div>
+                  </Link>
+                  <Button
+                    design="Transparent"
+                    onClick={async () => {
+                      if (!confirm(t("plans.confirmUnfollow"))) return;
+                      await fetch(`/api/my-plans/${p.id}`, { method: "DELETE" });
+                      setFollowedPlans(prev => prev.filter(x => x.id !== p.id));
+                    }}
+                  >
+                    {t("plans.unfollow")}
+                  </Button>
+                </div>
               </ListItemCustom>
             ))}
           </List>

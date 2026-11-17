@@ -117,6 +117,8 @@
     "newPlan": "New Plan",
     "myPlans": "My Plans",
     "following": "Following",
+    "unfollow": "Stop",
+    "confirmUnfollow": "Stop following this plan? Your progress will be lost.",
     "publicPlans": "Free Plans",
     "noPlans": "No plans yet",
     "noPlansSubtitle": "Create your own plan or browse public ones from coaches",

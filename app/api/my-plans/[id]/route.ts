@@ -46,3 +46,17 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     })),
   });
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const enrollmentId = parseInt(params.id);
+  const deleted = await getDb()
+    .delete(athletePlans)
+    .where(and(eq(athletePlans.id, enrollmentId), eq(athletePlans.athleteId, session.user.id)))
+    .returning();
+
+  if (!deleted.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return new NextResponse(null, { status: 204 });
+}
